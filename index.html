@@ -6,25 +6,12 @@
     <title>Irmandade da Estrada · MotoClube</title>
     <link rel="manifest" href="data:application/manifest+json,{ \"name\": \"Irmandade da Estrada\", \"short_name\": \"MotoClube\", \"start_url\": \".\", \"display\": \"standalone\", \"theme_color\": \"#e06c2e\", \"background_color\": \"#050302\" }">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- QR Code libs -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
+        /* Seu estilo original permanece igual – omitido por brevidade, mantenha o mesmo CSS do seu arquivo */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root {
-            --bg-deep: #050302;
-            --bg-card: #0f0c0a;
-            --surface: #1a1512;
-            --ember: #e06c2e;
-            --ember-bright: #ff8c4a;
-            --gold: #d4af37;
-            --text-primary: #f5ede0;
-            --text-muted: #8a7a6a;
-            --border-ember: rgba(224,108,46,0.4);
-            --safe-bottom: env(safe-area-inset-bottom, 16px);
-            --font-body: 'Inter', system-ui, sans-serif;
-            --neon-glow: 0 0 5px #e06c2e;
-        }
+        :root { --bg-deep: #050302; --bg-card: #0f0c0a; --surface: #1a1512; --ember: #e06c2e; --ember-bright: #ff8c4a; --gold: #d4af37; --text-primary: #f5ede0; --text-muted: #8a7a6a; --border-ember: rgba(224,108,46,0.4); --safe-bottom: env(safe-area-inset-bottom, 16px); --font-body: 'Inter', system-ui, sans-serif; --neon-glow: 0 0 5px #e06c2e; }
         body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-body); height: 100vh; overflow: hidden; }
         .bg-flame { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(224,108,46,0.1) 0%, transparent 70%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path fill="%23e06c2e" d="M50,10 L60,40 L90,40 L65,60 L75,90 L50,70 L25,90 L35,60 L10,40 L40,40 Z"/></svg>'); background-size: 80px; pointer-events: none; z-index: 0; }
         .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 400; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; }
@@ -298,7 +285,7 @@
 </div>
 
 <script>
-    // Firebase Config (fornecida pelo usuário)
+    // Configuração do Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDbb96DSw05nFxK8W6-khfbkRMn9CIheq8",
         authDomain: "clube-de-vantagens-d748e.firebaseapp.com",
@@ -420,11 +407,11 @@
         setLoading(btn, true);
         loginCooldown = true;
         try {
-            // Verifica se é o primeiro usuário
-            const usersSnap = await db.collection('users').limit(1).get();
+            // Verifica se é o primeiro usuário (para definir admin)
+            const usersSnap = await db.collection('perfis').limit(1).get();
             const isFirst = usersSnap.empty;
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            await db.collection('users').doc(cred.user.uid).set({
+            const novoUsuario = {
                 email: email,
                 cpf: cpf.replace(/\D/g,''),
                 credits: isFirst ? 500 : 0,
@@ -436,7 +423,8 @@
                 skillPoints: isFirst ? 10 : 0,
                 plano: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+            await db.collection('perfis').doc(cred.user.uid).set(novoUsuario);
             toast("Conta criada! Faça login.", "success");
         } catch (e) {
             toast(e.message, "error");
@@ -447,17 +435,17 @@
 
     window.logout = () => { auth.signOut(); };
 
-    // ========== onAuthStateChanged ==========
+    // ========== onAuthStateChanged (CORRIGIDO PARA USAR 'perfis') ==========
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             document.getElementById('loadingData').style.display = 'flex';
             try {
-                const userRef = db.collection('users').doc(user.uid);
-                const docSnap = await userRef.get();
+                const userRef = db.collection('perfis').doc(user.uid);
+                let docSnap = await userRef.get();
                 if (!docSnap.exists) {
-                    // Fallback: criar documento (caso não tenha sido criado no registro)
-                    const isFirst = (await db.collection('users').limit(1).get()).empty;
-                    await userRef.set({
+                    // Cria documento automaticamente se não existir (fallback)
+                    const isFirst = (await db.collection('perfis').limit(1).get()).empty;
+                    const newData = {
                         email: user.email,
                         cpf: user.email.includes('@cpf.irmandade.app') ? user.email.split('@')[0] : '',
                         credits: isFirst ? 500 : 0,
@@ -469,9 +457,11 @@
                         skillPoints: isFirst ? 10 : 0,
                         plano: 0,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    };
+                    await userRef.set(newData);
+                    docSnap = await userRef.get();
                 }
-                userData = { uid: user.uid, ...(await userRef.get()).data() };
+                userData = { uid: user.uid, ...docSnap.data() };
                 document.getElementById('loadingData').style.display = 'none';
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
@@ -480,6 +470,7 @@
                 carregarDestinatarios();
                 carregarMeusFeedbacks();
             } catch (err) {
+                console.error(err);
                 toast("Erro ao acessar seus dados. Verifique as regras do Firestore.", "error");
                 document.getElementById('loadingData').style.display = 'none';
                 auth.signOut();
@@ -491,7 +482,7 @@
         }
     });
 
-    // ========== RENDER PRINCIPAL ==========
+    // ========== RENDER PRINCIPAL (ATUALIZA PERFIL) ==========
     async function renderUI() {
         if (!userData) return;
         document.getElementById('creditsAmount').innerText = userData.credits || 0;
@@ -507,15 +498,26 @@
             const preview = document.getElementById('profilePicPreview');
             if (preview) preview.innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
         }
+        // Preencher campos do perfil se existirem
+        if (userData.perfil) {
+            document.getElementById('perfilNome').value = userData.perfil.nome || '';
+            document.getElementById('perfilIdade').value = userData.perfil.idade || '';
+            document.getElementById('perfilHabilitado').value = userData.perfil.habilitado || 'sim';
+            document.getElementById('perfilMoto').value = userData.perfil.moto || '';
+            document.getElementById('perfilPlaca').value = userData.perfil.placa || '';
+        }
         carregarMissoes(); carregarRanking(); carregarSorteios(); carregarCheckins(); carregarGaleria(); carregarParceiros(); carregarHabilidades(); carregarConquistas();
     }
 
     async function addCredits(amt, xp = 0) {
         if (!userData.uid) return;
-        await db.collection('users').doc(userData.uid).update({
+        await db.collection('perfis').doc(userData.uid).update({
             credits: firebase.firestore.FieldValue.increment(amt),
             trust: firebase.firestore.FieldValue.increment(xp)
         });
+        userData.credits += amt;
+        userData.trust += xp;
+        renderUI();
     }
 
     // ========== PERFIL ==========
@@ -527,7 +529,8 @@
             moto: document.getElementById('perfilMoto').value,
             placa: document.getElementById('perfilPlaca').value
         };
-        await db.collection('users').doc(userData.uid).update({ perfil });
+        await db.collection('perfis').doc(userData.uid).update({ perfil });
+        userData.perfil = perfil;
         toast("Perfil salvo", "success");
     }
 
@@ -539,14 +542,14 @@
         setLoading(btn, true);
         try {
             const url = await uploadImageToStorage(file, `profile/${userData.uid}/${Date.now()}.jpg`);
-            await db.collection('users').doc(userData.uid).update({ 'perfil.fotoURL': url });
+            await db.collection('perfis').doc(userData.uid).update({ 'perfil.fotoURL': url });
             toast("Foto atualizada!", "success");
             renderUI();
         } catch (err) { toast("Erro ao enviar foto", "error"); }
         setLoading(btn, false);
     });
 
-    // ========== QR CODE ==========
+    // ========== QR CODE (mantido igual) ==========
     const HMAC_KEY = "IRMANDADE_SECRET_KEY_2024";
     async function generateSecureQRData(uid) {
         const nonce = Date.now().toString() + Math.random().toString(36);
@@ -669,7 +672,9 @@
     }
     window.pagarParceiro = async (id, custo) => {
         if ((userData.credits || 0) < custo) return toast("Saldo insuficiente", "error");
-        await db.collection('users').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-custo) });
+        await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-custo) });
+        userData.credits -= custo;
+        renderUI();
         toast(`Pagamento de ${custo} tokens realizado!`, "success");
     };
 
@@ -679,10 +684,10 @@
     window.cumprirMissao = async (id) => { let m = missions.find(i => i.id === id); if (m) { await addCredits(m.reward, m.reward * 0.3); toast(`Missão ${m.title} concluída!`, "success"); } };
 
     // ========== RANKING ==========
-    async function carregarRanking() { let snap = await db.collection('users').orderBy('trust', 'desc').limit(30).get(); let lista = snap.docs.map(d => d.data()); document.getElementById('rankingList').innerHTML = lista.map((u, i) => `<div>${i+1}. ${u.perfil?.nome || u.cpf} - 🔥${u.credits || 0}</div>`).join(''); }
+    async function carregarRanking() { let snap = await db.collection('perfis').orderBy('trust', 'desc').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('rankingList').innerHTML = lista.map((u, i) => `<div>${i+1}. ${u.perfil?.nome || u.cpf} - 🔥${u.credits || 0}</div>`).join(''); }
 
     // ========== SORTEIOS ==========
-    async function comprarTicket() { if ((userData.credits||0) < 50) return toast("Tokens insuficientes", "error"); await db.collection('users').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-50), tickets: firebase.firestore.FieldValue.increment(1) }); toast("Ingresso comprado!", "success"); }
+    async function comprarTicket() { if ((userData.credits||0) < 50) return toast("Tokens insuficientes", "error"); await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-50), tickets: firebase.firestore.FieldValue.increment(1) }); userData.credits -= 50; userData.tickets = (userData.tickets||0)+1; renderUI(); toast("Ingresso comprado!", "success"); }
     async function carregarSorteios() { let snap = await db.collection('sorteios').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('sorteiosList').innerHTML = lista.map(s => `<div>🎲 ${s.nome} - Prêmio: ${s.premio}</div>`).join('') || '<p>Nenhum sorteio ativo</p>'; document.getElementById('meusTickets').innerHTML = `🎟️ Seus ingressos: ${userData.tickets || 0}`; }
 
     // ========== GALERIA ==========
@@ -691,7 +696,7 @@
 
     // ========== HABILIDADES ==========
     async function carregarHabilidades() { let snap = await db.collection('skills').get(); if (snap.empty) { await db.collection('skills').doc('skill1').set({ id: 'skill1', name: 'Visão de Águia', desc: '+10% scans', cost: 2 }); snap = await db.collection('skills').get(); } allSkills = snap.docs.map(d => d.data()); let userSkills = userData.habilidades || []; document.getElementById('skillsTree').innerHTML = allSkills.map(s => `<div class="skill-card ${userSkills.includes(s.id)?'unlocked':''}" onclick="comprarHabilidade('${s.id}')"><strong>${s.name}</strong><br>${s.desc}<br>Custo: ${s.cost} pts</div>`).join(''); }
-    window.comprarHabilidade = async (id) => { let skill = allSkills.find(s => s.id === id); if (!skill) return; if ((userData.skillPoints||0) < skill.cost) return toast("Pontos insuficientes", "error"); if ((userData.habilidades||[]).includes(id)) return toast("Já possui", "error"); await db.collection('users').doc(userData.uid).update({ habilidades: firebase.firestore.FieldValue.arrayUnion(id), skillPoints: firebase.firestore.FieldValue.increment(-skill.cost) }); toast(`Habilidade ${skill.name} adquirida!`, "success"); carregarHabilidades(); };
+    window.comprarHabilidade = async (id) => { let skill = allSkills.find(s => s.id === id); if (!skill) return; if ((userData.skillPoints||0) < skill.cost) return toast("Pontos insuficientes", "error"); if ((userData.habilidades||[]).includes(id)) return toast("Já possui", "error"); await db.collection('perfis').doc(userData.uid).update({ habilidades: firebase.firestore.FieldValue.arrayUnion(id), skillPoints: firebase.firestore.FieldValue.increment(-skill.cost) }); userData.skillPoints -= skill.cost; userData.habilidades = [...(userData.habilidades||[]), id]; toast(`Habilidade ${skill.name} adquirida!`, "success"); carregarHabilidades(); };
 
     // ========== CONQUISTAS ==========
     async function carregarConquistas() { let snap = await db.collection('achievements').get(); if (snap.empty) { await db.collection('achievements').doc('ach1').set({ id: 'ach1', name: 'Primeiro Scan', desc: 'Escanear 1 QR' }); snap = await db.collection('achievements').get(); } allAchievements = snap.docs.map(d => d.data()); let userAch = userData.conquistas || []; document.getElementById('achievementsList').innerHTML = allAchievements.map(a => `<span class="badge-medal">${a.name} ${userAch.includes(a.id)?'🏅':'🔒'}</span>`).join(''); }
@@ -707,27 +712,27 @@
     async function descriptografar(obj, chave) { let dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(obj.iv) }, chave, new Uint8Array(obj.ciphertext)); return new TextDecoder().decode(dec); }
     window.enviarMensagemPrivada = async () => { let dest = document.getElementById('destinatarioSelect').value; if (!dest) return; let msg = document.getElementById('msgPrivada').value; if (!msg.trim()) return; let chave = await derivarChave(userData.uid, dest); let encrypted = await criptografar(msg, chave); await db.collection('privateChat').add({ from: userData.uid, to: dest, encrypted, timestamp: Date.now() }); document.getElementById('msgPrivada').value = ''; };
     async function carregarChatPrivado(dest) { if (privateListener) privateListener(); privateListener = db.collection('privateChat').where('from', 'in', [[userData.uid, dest], [dest, userData.uid]]).orderBy('timestamp').onSnapshot(async snap => { let chave = await derivarChave(userData.uid, dest); let msgs = []; for (let doc of snap.docs) { let d = doc.data(); try { let texto = await descriptografar(d.encrypted, chave); msgs.push({ from: d.from, texto, timestamp: d.timestamp }); } catch (e) {} } document.getElementById('privateChatArea').innerHTML = msgs.map(m => `<div class="chat-message ${m.from===userData.uid?'self':''}"><strong>${m.from===userData.uid?'Você':dest}</strong>: ${m.texto}<br><small>${new Date(m.timestamp).toLocaleTimeString()}</small></div>`).join(''); }); }
-    async function carregarDestinatarios() { let snap = await db.collection('users').get(); let membros = snap.docs.filter(d => d.id !== userData.uid).map(d => ({ id: d.id, nome: d.data().perfil?.nome || d.data().cpf })); let sel = document.getElementById('destinatarioSelect'); if (sel) sel.innerHTML = membros.map(m => `<option value="${m.id}">${m.nome}</option>`).join(''); if (membros.length) carregarChatPrivado(membros[0].id); }
+    async function carregarDestinatarios() { let snap = await db.collection('perfis').get(); let membros = snap.docs.filter(d => d.id !== userData.uid).map(d => ({ id: d.id, nome: d.data().perfil?.nome || d.data().cpf })); let sel = document.getElementById('destinatarioSelect'); if (sel) sel.innerHTML = membros.map(m => `<option value="${m.id}">${m.nome}</option>`).join(''); if (membros.length) carregarChatPrivado(membros[0].id); }
 
     // ========== BRINDES ==========
-    window.trocarIngressoPorKit = async () => { if ((userData.tickets||0) < 1) return toast("Sem ingressos", "error"); await db.collection('users').doc(userData.uid).update({ tickets: firebase.firestore.FieldValue.increment(-1) }); toast("Kit alimentos solicitado!", "success"); };
+    window.trocarIngressoPorKit = async () => { if ((userData.tickets||0) < 1) return toast("Sem ingressos", "error"); await db.collection('perfis').doc(userData.uid).update({ tickets: firebase.firestore.FieldValue.increment(-1) }); userData.tickets--; renderUI(); toast("Kit alimentos solicitado!", "success"); };
 
     // ========== FEEDBACK ==========
     window.enviarFeedback = async () => { let msg = document.getElementById('feedbackMsg').value; if (!msg.trim()) return; await db.collection('feedbacks').add({ userId: userData.uid, nome: userData.perfil?.nome || userData.cpf, mensagem: msg, data: new Date() }); toast("Feedback enviado", "success"); document.getElementById('feedbackMsg').value = ''; carregarMeusFeedbacks(); };
     async function carregarMeusFeedbacks() { let snap = await db.collection('feedbacks').where('userId', '==', userData.uid).orderBy('data', 'desc').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('meusFeedbacks').innerHTML = lista.map(f => `<div class="chat-message">${new Date(f.data.toDate()).toLocaleString()}<br>${f.mensagem}</div>`).join(''); }
 
-    // ========== ADMIN ==========
-    window.listarMembros = async () => { let snap = await db.collection('users').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('adminList').innerHTML = lista.map(m => `<div>📧 ${m.email} (CPF: ${m.cpf}) - 🔥${m.credits || 0} <button onclick="darCreditos('${m.id}', 100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}', -100)">-100</button></div>`).join(''); };
-    window.darCreditos = async (uid, amount) => { await db.collection('users').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) }); toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros(); };
+    // ========== ADMIN (as funções precisam usar 'perfis' também) ==========
+    window.listarMembros = async () => { let snap = await db.collection('perfis').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('adminList').innerHTML = lista.map(m => `<div>📧 ${m.email} (CPF: ${m.cpf}) - 🔥${m.credits || 0} <button onclick="darCreditos('${m.id}', 100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}', -100)">-100</button></div>`).join(''); };
+    window.darCreditos = async (uid, amount) => { await db.collection('perfis').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) }); toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros(); };
     window.adminGerenciarHabilidades = () => { document.getElementById('habilidadesAdminArea').innerHTML = `<input id="skillName" placeholder="Nome"><input id="skillCost" placeholder="Custo"><button onclick="criarHabilidade()">Criar</button><div id="listaSkillsAdmin"></div>`; };
-    window.mintCreditsComValidacao = async () => { let email = prompt("E-mail do usuário:"); let amt = parseInt(prompt("Tokens (máx 1000):")); if (amt > 1000) return toast("Máx 1000"); let q = await db.collection('users').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(amt) }); toast(`+${amt} tokens para ${email}`, "success"); };
+    window.mintCreditsComValidacao = async () => { let email = prompt("E-mail do usuário:"); let amt = parseInt(prompt("Tokens (máx 1000):")); if (amt > 1000) return toast("Máx 1000"); let q = await db.collection('perfis').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(amt) }); toast(`+${amt} tokens para ${email}`, "success"); };
     window.configurarRecompensas = () => toast("Função em desenvolvimento");
     window.definirTaxaCambio = () => { let nova = parseFloat(prompt("Nova taxa (1 token = ?)")); if (!isNaN(nova)) exchangeRate = nova; toast(`Taxa alterada para ${nova}`); };
     window.verRelatorioFinanceiro = () => { document.getElementById('relatorioFinanceiro').innerHTML = `<div class="card">Reserva: ${reserva} tokens | Circulação: ${totalTokens}</div>`; };
     window.verAdminLogs = async () => { let snap = await db.collection('admin_logs').orderBy('timestamp', 'desc').limit(50).get(); let logs = snap.docs.map(d => d.data()); document.getElementById('adminLogsArea').innerHTML = `<h4>Últimas ações</h4>${logs.map(l => `<div class="admin-log">${l.action} - ${JSON.stringify(l.details)} - ${l.timestamp?.toDate().toLocaleString()}</div>`).join('')}`; };
     window.adminGerenciarConquistas = () => { document.getElementById('conquistasAdminArea').innerHTML = `<input id="achName" placeholder="Nome"><button onclick="criarConquista()">Criar</button><div id="listaConquistasAdmin"></div>`; };
     window.adminGerenciarEventos = () => { document.getElementById('eventosArea').innerHTML = `<input id="eventName" placeholder="Nome"><input id="eventMult" placeholder="Multiplicador"><input type="datetime-local" id="eventEnd"><button onclick="criarEvento()">Criar</button><div id="listaEventos"></div>`; };
-    window.adminDefinirClasse = async () => { let email = prompt("E-mail do usuário:"); let classe = prompt("Nova classe:"); if (email && classe) { let q = await db.collection('users').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ classe }); toast(`Classe alterada para ${classe}`); } };
+    window.adminDefinirClasse = async () => { let email = prompt("E-mail do usuário:"); let classe = prompt("Nova classe:"); if (email && classe) { let q = await db.collection('perfis').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ classe }); toast(`Classe alterada para ${classe}`); } };
     window.gerenciarParceiros = () => { document.getElementById('parceirosAdminArea').innerHTML = `<input id="parNome" placeholder="Nome"><input id="parCat" placeholder="Categoria"><input id="parPrice" placeholder="Preço"><button onclick="criarParceiroAdmin()">Criar</button><div id="listaParceirosAdmin"></div>`; };
     // Funções auxiliares admin
     window.criarHabilidade = async () => { let name = document.getElementById('skillName').value, cost = parseInt(document.getElementById('skillCost').value); let id = Date.now().toString(); await db.collection('skills').doc(id).set({ id, name, desc: "Personalizada", cost }); toast("Habilidade criada"); adminGerenciarHabilidades(); };
@@ -783,5 +788,35 @@
         navigator.serviceWorker.register(swUrl).catch(console.warn);
     }
 </script>
+
+<!-- Instrução das Regras do Firestore (copie e cole no console) -->
+<!--
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Coleção principal de perfis – cada usuário só acessa seu próprio documento
+    match /perfis/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    // Demais coleções (tokens, checkins, etc.) – podem ser liberadas para usuários autenticados
+    match /tokens/{documentId} {
+      allow read, write: if request.auth != null;
+    }
+    match /checkins/{doc} { allow read, write: if request.auth != null; }
+    match /notas/{doc} { allow read, write: if request.auth != null; }
+    match /partners/{doc} { allow read, write: if request.auth != null; }
+    match /galeria/{doc} { allow read, write: if request.auth != null; }
+    match /skills/{doc} { allow read, write: if request.auth != null; }
+    match /achievements/{doc} { allow read, write: if request.auth != null; }
+    match /globalChat/{doc} { allow read, write: if request.auth != null; }
+    match /privateChat/{doc} { allow read, write: if request.auth != null; }
+    match /feedbacks/{doc} { allow read, write: if request.auth != null; }
+    match /events/{doc} { allow read, write: if request.auth != null; }
+    match /sorteios/{doc} { allow read, write: if request.auth != null; }
+    match /admin_logs/{doc} { allow read, write: if request.auth != null && get(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.role == 'admin'; }
+    match /usedQrHashes/{hash} { allow read, write: if request.auth != null; }
+  }
+}
+-->
 </body>
 </html>
