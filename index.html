@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Irmandade da Estrada · MotoClube</title>
-    <link rel="manifest" href="data:application/manifest+json,{ \"name\": \"Irmandade da Estrada\", \"short_name\": \"MotoClube\", \"start_url\": \".\", \"display\": \"standalone\", \"theme_color\": \"#e06c2e\", \"background_color\": \"#050302\" }">
+    <title>Irmandade do Asfalto · MotoClube</title>
+    <link rel="manifest" href="data:application/manifest+json,{ \"name\": \"Irmandade do Asfalto\", \"short_name\": \"MotoClube\", \"start_url\": \".\", \"display\": \"standalone\", \"theme_color\": \"#e06c2e\", \"background_color\": \"#050302\" }">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -14,435 +14,705 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root { --bg-deep: #050302; --ember: #e06c2e; --ember-bright: #ff8c4a; --gold: #d4af37; --text-primary: #f5ede0; --text-muted: #8a7a6a; --border-ember: rgba(224,108,46,0.4); --safe-bottom: env(safe-area-inset-bottom, 16px); }
-        body { background: var(--bg-deep); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; height: 100vh; overflow: hidden; }
-        .bg-flame { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(224,108,46,0.1) 0%, transparent 70%); pointer-events: none; z-index: 0; }
-        .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; }
-        .toast { padding: 14px 18px; border-radius: 16px; background: #1f1a14e6; backdrop-filter: blur(10px); border-left: 4px solid var(--ember); animation: fadeIn 0.3s; color: white; font-size: 14px; }
+        :root {
+            --bg-deep: #050302;
+            --bg-card: #0f0c0a;
+            --surface: #1a1512;
+            --ember: #e06c2e;
+            --ember-bright: #ff8c4a;
+            --gold: #d4af37;
+            --text-primary: #f5ede0;
+            --text-muted: #8a7a6a;
+            --border-ember: rgba(224,108,46,0.4);
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+            --font-body: 'Inter', system-ui, sans-serif;
+        }
+        body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-body); height: 100vh; overflow: hidden; }
+        .bg-flame { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(224,108,46,0.1) 0%, transparent 70%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path fill="%23e06c2e" d="M50,10 L60,40 L90,40 L65,60 L75,90 L50,70 L25,90 L35,60 L10,40 L40,40 Z"/></svg>'); background-size: 80px; pointer-events: none; z-index: 0; }
+        .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 400; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; }
+        .toast { padding: 12px; border-radius: 16px; background: #1f1a14e6; backdrop-filter: blur(10px); border-left: 4px solid var(--ember); animation: fadeIn 0.2s; color: white; }
         .toast-error { border-left-color: #c55a3a; background: #2a1a14e6; }
         .toast-success { border-left-color: #2e7d32; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; } }
         #app { display: none; flex-direction: column; height: 100%; position: relative; z-index: 2; }
-        .topbar { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(5,3,2,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-ember); }
-        .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; }
-        .logo i { font-size: 28px; color: var(--ember); }
+        .topbar { padding: 12px 16px; display: flex; justify-content: space-between; background: rgba(5,3,2,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-ember); }
+        .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+        .logo i { font-size: 28px; color: var(--ember); filter: drop-shadow(0 0 2px var(--ember)); }
         .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
         .view { display: none; flex-direction: column; gap: 20px; animation: fade 0.2s; }
         .view.active { display: flex; }
-        .card { background: rgba(26,21,18,0.85); backdrop-filter: blur(8px); border-radius: 28px; padding: 20px; border: 1px solid var(--border-ember); }
-        .btn { border: none; border-radius: 40px; padding: 14px 24px; font-weight: 600; cursor: pointer; background: #241e1a; color: var(--text-primary); border: 1px solid var(--border-ember); display: inline-flex; align-items: center; gap: 8px; justify-content: center; font-size: 15px; transition: all 0.2s; }
-        .btn:active { transform: scale(0.97); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .card { background: rgba(26,21,18,0.85); backdrop-filter: blur(8px); border-radius: 28px; padding: 20px; border: 1px solid var(--border-ember); transition: 0.2s; }
+        .btn { border: none; border-radius: 40px; padding: 10px 20px; font-weight: 600; cursor: pointer; background: #241e1a; color: var(--text-primary); border: 1px solid var(--border-ember); transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: linear-gradient(135deg, #b9591f, #e06c2e); color: #0a0502; border: none; box-shadow: 0 2px 8px rgba(224,108,46,0.3); }
         .btn-outline { background: transparent; border: 1px solid var(--ember); color: var(--ember-bright); }
-        .btn-sm { padding: 8px 14px; font-size: 13px; }
+        .btn-danger { background: #8b3a2a; border-color: #c55a3a; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
         .stats-row { display: flex; justify-content: space-between; background: #1a1512; border-radius: 40px; padding: 12px; margin-top: 8px; }
         .avatar-circle { width: 56px; height: 56px; background: #2e241f; border-radius: 50%; border: 2px solid var(--ember); display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
         .grid-2col { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin: 8px 0; text-align: center; cursor: pointer; }
-        .grid-2col > div { padding: 12px; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(5,3,2,0.95); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 8px 8px calc(8px + var(--safe-bottom)); border-top: 1px solid var(--border-ember); z-index: 20; }
         .nav-item { display: flex; flex-direction: column; align-items: center; background: none; border: none; color: var(--text-muted); font-size: 0.7rem; padding: 6px; gap: 4px; cursor: pointer; }
-        .nav-item.active { color: var(--ember-bright); }
-        input, select, textarea { width: 100%; padding: 14px; background: #1c140f; border: 1px solid #3a2a20; border-radius: 20px; color: white; margin: 6px 0; font-size: 15px; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ember); }
-        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.6s linear infinite; }
+        .nav-item.active { color: var(--ember-bright); text-shadow: 0 0 4px var(--ember); }
+        .gallery { display: flex; overflow-x: auto; gap: 12px; padding: 8px 0; }
+        .gallery-item { min-width: 100px; height: 100px; background: #1a1512; border-radius: 16px; overflow: hidden; border: 1px solid var(--border-ember); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .mural-horizontal { display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding: 8px; background: #1f170f; border-radius: 28px; }
+        .mural-item { background: #2a2018; border-radius: 20px; padding: 8px 15px; border-left: 3px solid var(--ember); }
+        .chat-message { background: #2a2018; border-radius: 20px; padding: 8px 12px; margin-bottom: 6px; }
+        .chat-message.self { background: #4a3424; text-align: right; }
+        .skill-tree { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+        .skill-card { background: #2a2018; border-radius: 20px; padding: 12px; width: 140px; text-align: center; border: 1px solid var(--border-ember); cursor: pointer; }
+        .skill-card.unlocked { background: #4a3424; border-color: var(--gold); }
+        .badge-medal { display: inline-block; background: #2a2a1a; border-radius: 40px; padding: 4px 12px; margin: 4px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #1c140f; border: 1px solid #3a2a20; border-radius: 20px; color: white; margin: 6px 0; }
+        .profile-field { margin-bottom: 16px; }
+        .profile-field label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .flex-btns { display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+        .xp-bar { background: #2e241f; height: 8px; border-radius: 10px; margin: 8px 0; }
+        .plan-badge, .status-badge { font-size: 0.7rem; background: #241e1a; padding: 2px 8px; border-radius: 20px; }
         .loading-full { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 300; flex-direction: column; gap: 16px; }
+        .hidden { display: none; }
         #reader { border-radius: 16px; overflow: hidden; background: #111; min-height: 240px; }
-        .mural-horizontal { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding: 8px; background: #1f170f; border-radius: 20px; }
-        .mural-item { background: #2a2018; border-radius: 16px; padding: 10px 14px; border-left: 3px solid var(--ember); }
-        .login-container { position: fixed; inset: 0; background: var(--bg-deep); display: flex; align-items: center; justify-content: center; z-index: 200; }
-        .login-card { max-width: 400px; width: 90%; text-align: center; background: rgba(26,21,18,0.95); backdrop-filter: blur(10px); border-radius: 28px; padding: 30px 24px; border: 1px solid var(--border-ember); }
     </style>
 </head>
 <body>
-    <div class="bg-flame"></div>
-    <div class="toast-stack" id="toastStack"></div>
+<div class="bg-flame"></div>
+<div class="toast-stack" id="toastStack"></div>
 
-    <!-- TELA DE LOGIN -->
-    <div class="login-container" id="loginScreen">
-        <div class="login-card">
-            <div style="font-size:70px; filter: drop-shadow(0 0 8px #e06c2e);">💀</div>
-            <h2 style="color:var(--ember-bright); margin:10px 0; font-size:22px;">IRMANDADE DA ESTRADA</h2>
-            <p style="color:var(--text-muted); margin-bottom:16px;">MotoClube · Economia Tokens</p>
-            <input type="text" id="emailLogin" placeholder="E-mail" value="cristophersmonteiro357@gmail.com" autocomplete="email">
-            <input type="password" id="senhaLogin" placeholder="Senha" autocomplete="current-password">
-            <div style="display:flex; gap:10px; margin-top:14px;">
-                <button class="btn btn-primary" style="flex:1;" id="loginBtn" type="button">⚡ ENTRAR</button>
-                <button class="btn btn-outline" style="flex:1;" id="registerBtn" type="button">🛡️ CRIAR CONTA</button>
-            </div>
-            <div style="margin-top:12px;">
-                <button class="btn btn-outline btn-sm" id="forgotPasswordBtn" type="button">🔑 Esqueci minha senha</button>
-            </div>
-            <p style="font-size:0.6rem; margin-top:14px; color:var(--text-muted);">🔒 Anti-fraude | PWA | Geolocalização</p>
+<div id="loginOverlay" style="position:fixed; inset:0; background:var(--bg-deep); display:flex; align-items:center; justify-content:center; z-index:200;">
+    <div class="card" style="max-width:380px; width:90%; text-align:center;">
+        <div style="font-size:70px; filter: drop-shadow(0 0 8px #e06c2e);">💀</div>
+        <h2 style="color:var(--ember-bright); margin:8px 0;">IRMANDADE DO ASFALTO</h2>
+        <p style="color:var(--text-muted);">MotoClube · Economia Tokens</p>
+        <input type="text" id="emailLogin" placeholder="E-mail" value="cristophersmonteiro357@gmail.com">
+        <input type="password" id="senhaLogin" placeholder="Senha">
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary" style="flex:1" id="loginBtn">⚡ ENTRAR</button>
+            <button class="btn btn-outline" style="flex:1" id="registerBtn">🛡️ CRIAR CONTA</button>
+        </div>
+        <div style="margin-top:8px;">
+            <button class="btn btn-outline btn-sm" id="forgotPasswordBtn">🔑 Esqueci minha senha</button>
+        </div>
+        <p style="font-size:0.65rem; margin-top:12px;">🔒 Anti-fraude | PWA | Geolocalização</p>
+    </div>
+</div>
+
+<div id="loadingData" style="display:none;" class="loading-full">
+    <div class="spinner" style="width:40px; height:40px;"></div>
+    <span>Carregando seus dados...</span>
+</div>
+
+<div id="app">
+    <div class="topbar">
+        <div class="logo"><i class="fas fa-skull"></i><span>Asfalto</span></div>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <div><span id="creditsAmount">0</span> 🔥</div>
+            <div class="avatar-circle" style="width:40px;height:40px; cursor:pointer;" onclick="navigateTo('perfil')"><span id="avatarIcon">💀</span></div>
         </div>
     </div>
-
-    <div id="loadingData" style="display:none;" class="loading-full">
-        <div class="spinner" style="width:40px; height:40px;"></div>
-        <span>Carregando seus dados...</span>
-    </div>
-
-    <div id="app">
-        <div class="topbar">
-            <div class="logo"><i class="fas fa-skull"></i><span>Estrada</span></div>
-            <div style="display:flex; gap:12px; align-items:center;">
-                <div><span id="creditsAmount">0</span> 🔥</div>
-                <div class="avatar-circle" style="width:40px;height:40px; cursor:pointer;" onclick="navigateTo('perfil')"><span id="avatarIcon">💀</span></div>
+    <div class="content">
+        <div class="view active" id="viewHome">
+            <div class="card">
+                <div style="font-size:14px;">Saldo de Tokens</div>
+                <div id="bigCredits" style="font-size:48px; font-weight:800; color:var(--ember-bright);">0</div>
+                <div class="stats-row"><span>🎟️ Ingressos: <span id="ticketAmount">0</span></span><span>🏅 Confiança: <span id="trustScore">0</span></span></div>
+                <div class="xp-bar"><div id="xpFill" style="background:linear-gradient(90deg,#c97e3a,#f0b27a); width:0%; height:100%; border-radius:10px;"></div></div>
+                <div><span class="plan-badge" id="planBadge">Associado</span> <span id="statusBadge">✅ Adimplente</span></div>
+            </div>
+            <div class="grid-2col">
+                <div onclick="navigateTo('qr')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-qrcode"></i></div><span>Meu QR</span></div>
+                <div onclick="navigateTo('scanner')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-camera"></i></div><span>Escanear</span></div>
+                <div onclick="navigateTo('checkin')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-map-marker-alt"></i></div><span>Check-in</span></div>
+                <div onclick="navigateTo('nf')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-receipt"></i></div><span>Nota Fiscal</span></div>
+                <div onclick="navigateTo('partners')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-store"></i></div><span>Parceiros</span></div>
+                <div onclick="navigateTo('gallery')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-images"></i></div><span>Galeria</span></div>
+                <div onclick="navigateTo('missoes')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-tasks"></i></div><span>Missões</span></div>
+                <div onclick="navigateTo('ranking')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-trophy"></i></div><span>Ranking</span></div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('sorteios')">🎲 Sorteios</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('habilidades')"><i class="fas fa-brain"></i> Habilidades</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('conquistas')"><i class="fas fa-medal"></i> Conquistas</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('chatGlobal')"><i class="fas fa-globe"></i> Mural</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('chatPrivado')"><i class="fas fa-lock"></i> Privado</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('brindes')"><i class="fas fa-gift"></i> Brindes</button>
+                <button class="btn btn-outline btn-sm" onclick="navigateTo('feedback')"><i class="fas fa-comment"></i> Feedback</button>
+                <button id="adminBtn" style="display:none;" class="btn btn-primary btn-sm" onclick="navigateTo('admin')">👑 Conselho</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 Sair</button>
             </div>
         </div>
-        <div class="content">
-            <div class="view active" id="viewHome">
-                <div class="card">
-                    <div style="font-size:14px;">Saldo de Tokens</div>
-                    <div id="bigCredits" style="font-size:48px; font-weight:800; color:var(--ember-bright);">0</div>
-                    <div class="stats-row"><span>🎟️ Ingressos: <span id="ticketAmount">0</span></span><span>🏅 Confiança: <span id="trustScore">0</span></span></div>
-                    <div style="margin-top:8px;"><span id="planBadge" style="background:#241e1a; padding:4px 12px; border-radius:20px; font-size:0.75rem;">Associado</span> <span id="statusBadge" style="background:#241e1a; padding:4px 12px; border-radius:20px; font-size:0.75rem;">✅ Adimplente</span></div>
-                </div>
-                <div class="grid-2col">
-                    <div onclick="navigateTo('qr')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-qrcode"></i></div><span>Meu QR</span></div>
-                    <div onclick="navigateTo('scanner')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-camera"></i></div><span>Escanear</span></div>
-                    <div onclick="navigateTo('checkin')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-map-marker-alt"></i></div><span>Check-in</span></div>
-                    <div onclick="navigateTo('nf')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-receipt"></i></div><span>Nota Fiscal</span></div>
-                    <div onclick="navigateTo('ranking')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-trophy"></i></div><span>Ranking</span></div>
-                    <div onclick="navigateTo('gallery')"><div class="avatar-circle" style="margin:auto;"><i class="fas fa-images"></i></div><span>Galeria</span></div>
-                </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
-                    <button class="btn btn-outline btn-sm" onclick="navigateTo('chatGlobal')">💬 Mural</button>
-                    <button id="adminBtn" style="display:none;" class="btn btn-primary btn-sm" onclick="navigateTo('admin')">👑 Conselho</button>
-                    <button class="btn btn-outline btn-sm" onclick="logout()">🚪 Sair</button>
+
+        <div class="view" id="viewQr">
+            <div class="card"><h3><i class="fas fa-qrcode"></i> Meu QR Code</h3>
+                <div id="qrContainer" style="text-align:center; min-height:200px;"></div>
+                <button class="btn btn-primary btn-block" onclick="generateQR()">🔥 Gerar QR Seguro</button>
+                <p style="font-size:10px; margin-top:8px;">Válido por 5 min • Assinado</p>
+            </div>
+        </div>
+
+        <div class="view" id="viewScanner">
+            <div class="card"><h3><i class="fas fa-camera"></i> Escanear QR</h3>
+                <div id="reader"></div>
+                <div class="flex-btns" style="margin-top:12px;">
+                    <button class="btn btn-primary" id="btnStartScanner">📷 Iniciar</button>
+                    <button class="btn btn-outline" id="btnStopScanner" style="display:none;">⏹️ Parar</button>
                 </div>
             </div>
-            <div class="view" id="viewQr"><div class="card"><h3><i class="fas fa-qrcode"></i> Meu QR Code</h3><div id="qrContainer" style="text-align:center; min-height:200px;"></div><button class="btn btn-primary" onclick="generateQR()" style="width:100%; margin-top:12px;">🔥 Gerar QR Seguro</button></div></div>
-            <div class="view" id="viewScanner"><div class="card"><h3><i class="fas fa-camera"></i> Escanear QR</h3><div id="reader"></div><div style="display:flex; gap:10px; margin-top:12px;"><button class="btn btn-primary" id="btnStartScanner" style="flex:1;">📷 Iniciar</button><button class="btn btn-outline" id="btnStopScanner" style="flex:1; display:none;">⏹️ Parar</button></div></div></div>
-            <div class="view" id="viewPerfil"><div class="card"><h3><i class="fas fa-user-circle"></i> Meu Perfil</h3><input id="perfilNome" placeholder="Nome"><input id="perfilCpf" placeholder="CPF"><input id="perfilIdade" type="number" placeholder="Idade"><select id="perfilHabilitado"><option>sim</option><option>não</option></select><input id="perfilMoto" placeholder="Moto"><input id="perfilPlaca" placeholder="Placa"><button class="btn btn-primary" onclick="salvarPerfil()" style="width:100%; margin-top:8px;">Salvar</button></div></div>
-            <div class="view" id="viewCheckin"><div class="card"><h3>📍 Check-in</h3><input type="file" id="checkinFoto" accept="image/*" capture="environment"><button class="btn btn-primary" id="checkinBtn" style="width:100%; margin-top:8px;">Registrar Check-in</button></div></div>
-            <div class="view" id="viewNf"><div class="card"><h3>🧾 Nota Fiscal</h3><input id="valorNF" type="number" placeholder="Valor R$" step="0.01"><input type="file" id="nfFoto" accept="image/*" capture="environment"><button class="btn btn-primary" id="nfBtn" style="width:100%; margin-top:8px;">Validar Nota</button></div></div>
-            <div class="view" id="viewRanking"><div class="card"><h3>🏅 Ranking</h3><div id="rankingList"></div></div></div>
-            <div class="view" id="viewChatGlobal"><div class="card"><h3>💬 Mural Global</h3><div id="globalMural" class="mural-horizontal"></div><input id="msgGlobal" placeholder="Escreva sua mensagem..."><button class="btn btn-primary" id="globalMsgBtn" style="width:100%; margin-top:8px;">Enviar</button></div></div>
-            <div class="view" id="viewGallery"><div class="card"><h3>📸 Galeria</h3><div id="galleryContainer" style="display:flex; gap:10px; overflow-x:auto;"></div></div></div>
-            <div class="view" id="viewAdmin"><div class="card"><h3>👑 Conselho</h3><button class="btn btn-primary btn-sm" onclick="listarMembros()">Listar Membros</button><button class="btn btn-primary btn-sm" onclick="mintCredits()">Cunhar Tokens</button><div id="adminList" style="margin-top:12px;"></div></div></div>
         </div>
-        <div class="bottom-nav">
-            <button class="nav-item active" data-view="home" onclick="navigateTo('home')"><i class="fas fa-home"></i><span>Home</span></button>
-            <button class="nav-item" data-view="qr" onclick="navigateTo('qr')"><i class="fas fa-qrcode"></i><span>QR</span></button>
-            <button class="nav-item" data-view="scanner" onclick="navigateTo('scanner')"><i class="fas fa-camera"></i><span>Scan</span></button>
-            <button class="nav-item" data-view="perfil" onclick="navigateTo('perfil')"><i class="fas fa-user"></i><span>Perfil</span></button>
-            <button class="nav-item" data-view="gallery" onclick="navigateTo('gallery')"><i class="fas fa-image"></i><span>Galeria</span></button>
+
+        <div class="view" id="viewPerfil">
+            <div class="card"><h3><i class="fas fa-user-circle"></i> Meu Perfil</h3>
+                <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+                    <div class="avatar-circle" style="width:80px;height:80px;" id="profilePicPreview"><span>💀</span></div>
+                    <div><button class="btn btn-sm" id="uploadProfileBtn">Alterar Foto</button><input type="file" id="profilePicInput" accept="image/*" style="display:none;"></div>
+                </div>
+                <div class="profile-field"><label>Nome</label><input id="perfilNome" placeholder="Seu nome"></div>
+                <div class="profile-field"><label>CPF</label><input id="perfilCpf" placeholder="CPF"></div>
+                <div class="profile-field"><label>Idade</label><input id="perfilIdade" type="number"></div>
+                <div class="profile-field"><label>Habilitado (CNH)</label><select id="perfilHabilitado"><option>sim</option><option>não</option></select></div>
+                <div class="profile-field"><label>Moto</label><input id="perfilMoto" placeholder="Modelo"></div>
+                <div class="profile-field"><label>Placa</label><input id="perfilPlaca" placeholder="ABC-1234"></div>
+                <button class="btn btn-primary" onclick="salvarPerfil()">Salvar</button>
+            </div>
+            <div class="card"><h3>📜 Meus Check-ins</h3><div id="meusCheckinsList"></div></div>
+            <div class="card"><h3>🎨 Tema</h3><input type="color" id="themeColor" onchange="mudarCorTema(this.value)"><button class="btn btn-outline btn-sm" onclick="toggleDark()">Modo Escuro</button></div>
+        </div>
+
+        <div class="view" id="viewCheckin">
+            <div class="card"><h3><i class="fas fa-camera"></i> Check-in Parceiro</h3>
+                <select id="checkinPartnerSelect"></select>
+                <input type="file" id="checkinFoto" accept="image/*" capture="environment">
+                <button class="btn btn-primary" id="checkinBtn">Registrar</button>
+            </div>
+        </div>
+
+        <div class="view" id="viewNf">
+            <div class="card"><h3>🧾 Nota Fiscal</h3>
+                <input id="valorNF" placeholder="Valor R$" type="number" step="0.01">
+                <input type="file" id="nfFoto" accept="image/*" capture="environment">
+                <button class="btn btn-primary" id="nfBtn">Validar</button>
+            </div>
+        </div>
+
+        <div class="view" id="viewPartners"><div class="card"><h3>🏪 Parceiros</h3><div id="partnersList"></div></div></div>
+
+        <div class="view" id="viewMissoes"><div class="card"><h3>⚔️ Missões</h3><div id="missionsList"></div></div></div>
+
+        <div class="view" id="viewRanking"><div class="card"><h3>🏅 Ranking</h3><div id="rankingList"></div></div></div>
+
+        <div class="view" id="viewSorteios"><div class="card"><h3>🎲 Sorteios</h3><div id="sorteiosList"></div><button class="btn btn-primary btn-sm" onclick="comprarTicket()">Comprar ingresso (50💰)</button><div id="meusTickets"></div></div></div>
+
+        <div class="view" id="viewHabilidades">
+            <div class="card"><h3>🌲 Árvore de Habilidades</h3><p>Pontos: <strong id="skillPointsDisplay">0</strong></p><div id="skillsTree" class="skill-tree"></div></div>
+        </div>
+
+        <div class="view" id="viewConquistas"><div class="card"><h3>🏅 Conquistas</h3><div id="achievementsList"></div></div></div>
+
+        <div class="view" id="viewChatGlobal">
+            <div class="card"><h3><i class="fas fa-globe"></i> Mural Global</h3><div id="globalMural" class="mural-horizontal"></div><input id="msgGlobal" placeholder="Sua mensagem..."><button class="btn btn-primary" id="globalMsgBtn">Enviar</button></div>
+        </div>
+
+        <div class="view" id="viewChatPrivado">
+            <div class="card"><h3><i class="fas fa-lock"></i> Chat Privado</h3><select id="destinatarioSelect"></select><div id="privateChatArea" style="max-height:300px; overflow-y:auto;"></div><input id="msgPrivada" placeholder="Mensagem"><button class="btn btn-primary" id="privMsgBtn">Enviar</button></div>
+        </div>
+
+        <div class="view" id="viewBrindes"><div class="card"><h3>🎁 Kit Alimentos</h3><button class="btn btn-primary" onclick="trocarIngressoPorKit()">Trocar 1 ingresso por Kit</button></div></div>
+
+        <div class="view" id="viewFeedback"><div class="card"><h3>📝 Sugestões/Reclamações</h3><textarea id="feedbackMsg" rows="3"></textarea><button class="btn btn-primary" id="feedbackBtn">Enviar</button><div id="meusFeedbacks"></div></div></div>
+
+        <div class="view" id="viewGallery"><div class="card"><h3>📸 Galeria</h3><div id="galleryContainer" class="gallery"></div><button class="btn btn-outline btn-sm" id="addGalleryBtn">Adicionar Foto</button></div></div>
+
+        <div class="view" id="viewAdmin">
+            <div class="card"><h3>👑 Conselho + Assistente Financeiro</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                    <button class="btn btn-outline btn-sm" onclick="listarMembros()">Membros</button>
+                    <button class="btn btn-primary btn-sm" onclick="mintCreditsComValidacao()">Cunhar Tokens</button>
+                    <button class="btn btn-outline btn-sm" onclick="verAdminLogs()">📋 Logs Admin</button>
+                </div>
+                <div id="adminList"></div>
+                <div id="adminLogsArea"></div>
+            </div>
         </div>
     </div>
+    <div class="bottom-nav">
+        <button class="nav-item active" data-view="home" onclick="navigateTo('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button class="nav-item" data-view="qr" onclick="navigateTo('qr')"><i class="fas fa-qrcode"></i><span>QR</span></button>
+        <button class="nav-item" data-view="checkin" onclick="navigateTo('checkin')"><i class="fas fa-camera"></i><span>Check</span></button>
+        <button class="nav-item" data-view="perfil" onclick="navigateTo('perfil')"><i class="fas fa-user"></i><span>Perfil</span></button>
+        <button class="nav-item" data-view="gallery" onclick="navigateTo('gallery')"><i class="fas fa-image"></i><span>Galeria</span></button>
+    </div>
+</div>
 
-    <script>
-        firebase.initializeApp({
-            apiKey: "AIzaSyDbb96DSw05nFxK8W6-khfbkRMn9CIheq8",
-            authDomain: "clube-de-vantagens-d748e.firebaseapp.com",
-            projectId: "clube-de-vantagens-d748e",
-            storageBucket: "clube-de-vantagens-d748e.firebasestorage.app",
-            messagingSenderId: "774730191238",
-            appId: "1:774730191238:web:9af24eddfafb18f1351c07"
-        });
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDbb96DSw05nFxK8W6-khfbkRMn9CIheq8",
+        authDomain: "clube-de-vantagens-d748e.firebaseapp.com",
+        projectId: "clube-de-vantagens-d748e",
+        storageBucket: "clube-de-vantagens-d748e.firebasestorage.app",
+        messagingSenderId: "774730191238",
+        appId: "1:774730191238:web:9af24eddfafb18f1351c07",
+        measurementId: "G-8V0WCRB0QQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
 
-        let userData = null;
-        let html5QrScanner = null;
+    let userData = {};
+    let allSkills = [];
+    let allAchievements = [];
+    let privateListener = null;
+    let html5QrScanner = null;
+    const missions = [
+        { id: 'm1', title: 'Visitar Parceiro', reward: 40 },
+        { id: 'm2', title: 'Nota Fiscal', reward: 30 },
+        { id: 'm3', title: 'Check-in', reward: 25 }
+    ];
 
-        function toast(msg, type) {
-            const stack = document.getElementById('toastStack');
-            const el = document.createElement('div');
-            el.className = 'toast' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : '');
-            el.textContent = msg;
-            stack.appendChild(el);
-            setTimeout(() => el.remove(), 3500);
+    function toast(msg, type = 'info') {
+        const stack = document.getElementById('toastStack');
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        if (type === 'error') el.classList.add('toast-error');
+        if (type === 'success') el.classList.add('toast-success');
+        el.textContent = msg;
+        stack.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
+
+    function setLoading(btn, isLoading) {
+        if (isLoading) {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span> Carregando...';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
         }
+    }
 
-        // ========== ENTRAR ==========
-        document.getElementById('loginBtn').addEventListener('click', async function() {
-            const email = document.getElementById('emailLogin').value.trim();
-            const pass = document.getElementById('senhaLogin').value;
-            if (!email || !pass) return toast('Preencha e-mail e senha', 'error');
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner"></span> Entrando...';
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-                toast('Login realizado com sucesso!', 'success');
-            } catch (e) {
-                toast(e.message, 'error');
-                this.disabled = false;
-                this.innerHTML = '⚡ ENTRAR';
-            }
-        });
+    // ========== LOGIN ==========
+    document.getElementById('loginBtn').addEventListener('click', async function() {
+        const email = document.getElementById('emailLogin').value.trim();
+        const pass = document.getElementById('senhaLogin').value;
+        if (!email || !pass) return toast('Preencha e-mail e senha', 'error');
+        setLoading(this, true);
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+        } catch (e) {
+            toast(e.message, 'error');
+            setLoading(this, false);
+        }
+    });
 
-        // ========== CRIAR CONTA (CORRIGIDO) ==========
-        document.getElementById('registerBtn').addEventListener('click', async function() {
-            const email = document.getElementById('emailLogin').value.trim();
-            const pass = document.getElementById('senhaLogin').value;
-            if (!email || pass.length < 6) return toast('E-mail válido e senha com 6+ caracteres', 'error');
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner"></span> Criando...';
-            try {
-                // Tenta criar a conta
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                // Cria o perfil
-                await db.collection('perfis').doc(cred.user.uid).set({
-                    email: email,
-                    cpf: '',
-                    credits: 500,
-                    trust: 0,
-                    role: 'admin',
-                    status: 'adimplente',
-                    perfil: { nome: email.split('@')[0] },
-                    tickets: 0,
-                    skillPoints: 10,
-                    plano: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                toast('Conta criada com sucesso!', 'success');
-            } catch (e) {
-                // Se o email já existe, tenta fazer login e criar/corrigir o perfil
-                if (e.code === 'auth/email-already-in-use') {
-                    try {
-                        const cred = await auth.signInWithEmailAndPassword(email, pass);
-                        // Garante que o perfil existe
-                        const docRef = db.collection('perfis').doc(cred.user.uid);
-                        const docSnap = await docRef.get();
-                        if (!docSnap.exists) {
-                            await docRef.set({
-                                email: email,
-                                cpf: '',
-                                credits: 500,
-                                trust: 0,
-                                role: 'admin',
-                                status: 'adimplente',
-                                perfil: { nome: email.split('@')[0] },
-                                tickets: 0,
-                                skillPoints: 10,
-                                plano: 0,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
-                        toast('Conta já existia. Perfil atualizado e login realizado!', 'success');
-                    } catch (e2) {
-                        toast('Erro ao acessar conta existente: ' + e2.message, 'error');
-                    }
-                } else {
-                    toast(e.message, 'error');
-                }
-            }
-            this.disabled = false;
-            this.innerHTML = '🛡️ CRIAR CONTA';
-        });
-
-        // ========== ESQUECI MINHA SENHA ==========
-        document.getElementById('forgotPasswordBtn').addEventListener('click', async function() {
-            const email = document.getElementById('emailLogin').value.trim();
-            if (!email) return toast('Digite seu e-mail no campo acima', 'error');
-            try {
-                await auth.sendPasswordResetEmail(email);
-                toast('Link de recuperação enviado para ' + email, 'success');
-            } catch (e) {
-                toast(e.message, 'error');
-            }
-        });
-
-        window.logout = function() { auth.signOut(); };
-
-        // ========== AUTH STATE ==========
-        auth.onAuthStateChanged(async function(user) {
-            if (user) {
-                document.getElementById('loadingData').style.display = 'flex';
+    // ========== REGISTRO ==========
+    document.getElementById('registerBtn').addEventListener('click', async function() {
+        const email = document.getElementById('emailLogin').value.trim();
+        const pass = document.getElementById('senhaLogin').value;
+        if (!email || pass.length < 6) return toast('E-mail e senha (mín. 6 caracteres)', 'error');
+        setLoading(this, true);
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('perfis').doc(cred.user.uid).set({
+                email: email,
+                cpf: '',
+                credits: 500,
+                trust: 0,
+                role: 'admin',
+                status: 'adimplente',
+                perfil: { nome: email.split('@')[0] },
+                tickets: 0,
+                skillPoints: 10,
+                plano: 0,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('Conta criada! Bem-vindo à Irmandade do Asfalto.', 'success');
+        } catch (e) {
+            if (e.code === 'auth/email-already-in-use') {
                 try {
-                    const userRef = db.collection('perfis').doc(user.uid);
-                    let docSnap = await userRef.get();
-                    if (!docSnap.exists) {
-                        await userRef.set({
-                            email: user.email || '',
-                            cpf: '',
-                            credits: 100,
-                            trust: 0,
-                            role: 'user',
-                            status: 'adimplente',
-                            perfil: { nome: (user.email || 'user').split('@')[0] },
-                            tickets: 0,
-                            skillPoints: 0,
-                            plano: 0,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        docSnap = await userRef.get();
-                    }
-                    userData = { uid: user.uid, ...docSnap.data() };
-                    document.getElementById('loadingData').style.display = 'none';
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('app').style.display = 'flex';
-                    renderUI();
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById('loadingData').style.display = 'none';
-                    toast('Erro ao carregar perfil.', 'error');
+                    await auth.signInWithEmailAndPassword(email, pass);
+                    toast('Conta já existia. Login realizado!', 'success');
+                } catch (e2) {
+                    toast('Erro: ' + e2.message, 'error');
                 }
             } else {
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('app').style.display = 'none';
-                document.getElementById('loadingData').style.display = 'none';
-                userData = null;
+                toast(e.message, 'error');
             }
-        });
-
-        function renderUI() {
-            if (!userData) return;
-            document.getElementById('creditsAmount').textContent = userData.credits || 0;
-            document.getElementById('bigCredits').textContent = userData.credits || 0;
-            document.getElementById('ticketAmount').textContent = userData.tickets || 0;
-            document.getElementById('trustScore').textContent = userData.trust || 0;
-            document.getElementById('planBadge').textContent = ['Associado','Bronze','Prata','Ouro','Platina','Diamante'][userData.plano || 0];
-            document.getElementById('statusBadge').innerHTML = userData.status === 'adimplente' ? '✅ Adimplente' : '⚠️ Inadimplente';
-            document.getElementById('adminBtn').style.display = userData.role === 'admin' ? 'inline-flex' : 'none';
-            document.getElementById('perfilNome').value = userData.perfil?.nome || '';
-            document.getElementById('perfilCpf').value = userData.cpf || '';
-            document.getElementById('perfilIdade').value = userData.perfil?.idade || '';
-            document.getElementById('perfilHabilitado').value = userData.perfil?.habilitado || 'sim';
-            document.getElementById('perfilMoto').value = userData.perfil?.moto || '';
-            document.getElementById('perfilPlaca').value = userData.perfil?.placa || '';
         }
+        setLoading(this, false);
+    });
 
-        window.salvarPerfil = async function() {
-            if (!userData) return;
-            const perfil = {
-                nome: document.getElementById('perfilNome').value,
-                idade: parseInt(document.getElementById('perfilIdade').value) || 0,
-                habilitado: document.getElementById('perfilHabilitado').value,
-                moto: document.getElementById('perfilMoto').value,
-                placa: document.getElementById('perfilPlaca').value
-            };
-            await db.collection('perfis').doc(userData.uid).update({ perfil, cpf: document.getElementById('perfilCpf').value });
-            userData.perfil = perfil;
-            toast('Perfil salvo!', 'success');
-        };
-
-        window.generateQR = function() {
-            const qrDiv = document.getElementById('qrContainer');
-            qrDiv.innerHTML = '';
-            new QRCode(qrDiv, {
-                text: JSON.stringify({ uid: userData.uid, timestamp: Date.now(), expiresAt: Date.now() + 300000 }),
-                width: 180, height: 180, colorDark: '#e06c2e', colorLight: '#ffffff'
-            });
-            toast('QR gerado!', 'success');
-        };
-
-        document.getElementById('btnStartScanner').addEventListener('click', function() {
-            document.getElementById('btnStartScanner').style.display = 'none';
-            document.getElementById('btnStopScanner').style.display = 'inline-flex';
-            html5QrScanner = new Html5Qrcode("reader");
-            html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-                async function(text) {
-                    try {
-                        const data = JSON.parse(text);
-                        if (data.uid && data.expiresAt > Date.now() && data.uid !== userData.uid) {
-                            await db.collection('perfis').doc(userData.uid).update({
-                                credits: firebase.firestore.FieldValue.increment(50),
-                                trust: firebase.firestore.FieldValue.increment(20)
-                            });
-                            userData.credits += 50; userData.trust += 20; renderUI();
-                            toast('✅ QR validado! +50 tokens', 'success');
-                            stopScanner();
-                        }
-                    } catch (e) { toast('QR inválido', 'error'); }
-                }, () => {}
-            ).catch(() => { stopScanner(); toast('Erro na câmera', 'error'); });
-        });
-
-        document.getElementById('btnStopScanner').addEventListener('click', stopScanner);
-
-        function stopScanner() {
-            if (html5QrScanner) { html5QrScanner.stop().catch(() => {}); html5QrScanner = null; }
-            document.getElementById('btnStartScanner').style.display = 'inline-flex';
-            document.getElementById('btnStopScanner').style.display = 'none';
+    // ========== ESQUECI MINHA SENHA ==========
+    document.getElementById('forgotPasswordBtn').addEventListener('click', async function() {
+        const email = document.getElementById('emailLogin').value.trim();
+        if (!email) return toast('Digite seu e-mail no campo acima', 'error');
+        try {
+            await auth.sendPasswordResetEmail(email);
+            toast('Link enviado para ' + email, 'success');
+        } catch (e) {
+            toast(e.message, 'error');
         }
+    });
 
-        document.getElementById('checkinBtn').addEventListener('click', async function() {
-            await db.collection('perfis').doc(userData.uid).update({
-                credits: firebase.firestore.FieldValue.increment(30),
-                trust: firebase.firestore.FieldValue.increment(10)
-            });
-            userData.credits += 30; userData.trust += 10; renderUI();
-            toast('Check-in +30 tokens!', 'success');
+    window.logout = () => auth.signOut();
+
+    // ========== AUTH STATE ==========
+    auth.onAuthStateChanged(async user => {
+        if (user) {
+            document.getElementById('loadingData').style.display = 'flex';
+            try {
+                const userRef = db.collection('perfis').doc(user.uid);
+                let docSnap = await userRef.get();
+                if (!docSnap.exists) {
+                    await userRef.set({
+                        email: user.email || '',
+                        cpf: '',
+                        credits: 100,
+                        trust: 0,
+                        role: 'user',
+                        status: 'adimplente',
+                        perfil: { nome: (user.email || 'user').split('@')[0] },
+                        tickets: 0,
+                        skillPoints: 0,
+                        plano: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    docSnap = await userRef.get();
+                }
+                userData = { uid: user.uid, ...docSnap.data() };
+                document.getElementById('loadingData').style.display = 'none';
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                renderUI();
+                carregarMuralGlobal();
+                carregarDestinatarios();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loadingData').style.display = 'none';
+                toast('Erro ao carregar perfil.', 'error');
+            }
+        } else {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loadingData').style.display = 'none';
+        }
+    });
+
+    function renderUI() {
+        if (!userData) return;
+        document.getElementById('creditsAmount').textContent = userData.credits || 0;
+        document.getElementById('bigCredits').textContent = userData.credits || 0;
+        document.getElementById('ticketAmount').textContent = userData.tickets || 0;
+        document.getElementById('trustScore').textContent = userData.trust || 0;
+        document.getElementById('skillPointsDisplay').textContent = userData.skillPoints || 0;
+        const planos = ['Associado', 'Bronze', 'Prata', 'Ouro', 'Platina', 'Diamante'];
+        document.getElementById('planBadge').textContent = planos[userData.plano || 0];
+        document.getElementById('statusBadge').innerHTML = userData.status === 'adimplente' ? '✅ Adimplente' : '⚠️ Inadimplente';
+        document.getElementById('adminBtn').style.display = userData.role === 'admin' ? 'inline-flex' : 'none';
+        if (userData.perfil?.fotoURL) {
+            document.getElementById('profilePicPreview').innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+        document.getElementById('perfilNome').value = userData.perfil?.nome || '';
+        document.getElementById('perfilCpf').value = userData.cpf || '';
+        document.getElementById('perfilIdade').value = userData.perfil?.idade || '';
+        document.getElementById('perfilHabilitado').value = userData.perfil?.habilitado || 'sim';
+        document.getElementById('perfilMoto').value = userData.perfil?.moto || '';
+        document.getElementById('perfilPlaca').value = userData.perfil?.placa || '';
+        carregarMissoes();
+        carregarRanking();
+        carregarSorteios();
+        carregarParceiros();
+        carregarHabilidades();
+        carregarConquistas();
+    }
+
+    async function addCredits(amt, xp = 0) {
+        if (!userData.uid) return;
+        await db.collection('perfis').doc(userData.uid).update({
+            credits: firebase.firestore.FieldValue.increment(amt),
+            trust: firebase.firestore.FieldValue.increment(xp)
         });
+        userData.credits += amt;
+        userData.trust += xp;
+        renderUI();
+    }
 
-        document.getElementById('nfBtn').addEventListener('click', async function() {
-            const valor = parseFloat(document.getElementById('valorNF').value);
-            if (!valor || valor <= 0) return toast('Valor inválido', 'error');
-            const cred = Math.floor(valor * 10);
-            await db.collection('perfis').doc(userData.uid).update({
-                credits: firebase.firestore.FieldValue.increment(cred),
-                trust: firebase.firestore.FieldValue.increment(Math.floor(cred * 0.3))
-            });
-            userData.credits += cred; userData.trust += Math.floor(cred * 0.3); renderUI();
-            document.getElementById('valorNF').value = '';
-            toast(`Nota validada! +${cred} tokens`, 'success');
+    window.salvarPerfil = async function() {
+        const perfil = {
+            nome: document.getElementById('perfilNome').value,
+            idade: parseInt(document.getElementById('perfilIdade').value) || 0,
+            habilitado: document.getElementById('perfilHabilitado').value,
+            moto: document.getElementById('perfilMoto').value,
+            placa: document.getElementById('perfilPlaca').value
+        };
+        const cpf = document.getElementById('perfilCpf').value;
+        await db.collection('perfis').doc(userData.uid).update({ perfil, cpf });
+        userData.perfil = perfil;
+        userData.cpf = cpf;
+        toast('Perfil salvo!', 'success');
+    };
+
+    window.generateQR = function() {
+        const qrDiv = document.getElementById('qrContainer');
+        qrDiv.innerHTML = '';
+        new QRCode(qrDiv, {
+            text: JSON.stringify({ uid: userData.uid, timestamp: Date.now(), expiresAt: Date.now() + 300000, version: '2.0' }),
+            width: 180, height: 180, colorDark: '#e06c2e', colorLight: '#ffffff'
         });
+        toast('QR gerado! Válido por 5 minutos.', 'success');
+    };
 
-        document.getElementById('globalMsgBtn').addEventListener('click', async function() {
-            const msg = document.getElementById('msgGlobal').value.trim();
-            if (!msg) return toast('Escreva uma mensagem', 'error');
-            await db.collection('globalChat').add({
-                uid: userData.uid, nome: userData.perfil?.nome || 'Anônimo',
-                texto: msg, data: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            document.getElementById('msgGlobal').value = '';
+    document.getElementById('btnStartScanner').addEventListener('click', function() {
+        document.getElementById('btnStartScanner').style.display = 'none';
+        document.getElementById('btnStopScanner').style.display = 'inline-flex';
+        html5QrScanner = new Html5Qrcode("reader");
+        html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+            async text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.uid && data.expiresAt > Date.now() && data.uid !== userData.uid) {
+                        await addCredits(50, 20);
+                        toast('✅ QR validado! +50 tokens', 'success');
+                        stopScanner();
+                    } else {
+                        toast('QR inválido ou expirado', 'error');
+                    }
+                } catch (e) {
+                    toast('QR inválido', 'error');
+                }
+            },
+            () => {}
+        ).catch(() => {
+            stopScanner();
+            toast('Erro na câmera', 'error');
         });
+    });
 
-        db.collection('globalChat').orderBy('data', 'desc').limit(30).onSnapshot(function(snap) {
-            const mural = document.getElementById('globalMural');
-            if (mural) mural.innerHTML = snap.docs.map(d => {
+    document.getElementById('btnStopScanner').addEventListener('click', stopScanner);
+
+    function stopScanner() {
+        if (html5QrScanner) { html5QrScanner.stop().catch(() => {}); html5QrScanner = null; }
+        document.getElementById('btnStartScanner').style.display = 'inline-flex';
+        document.getElementById('btnStopScanner').style.display = 'none';
+    }
+
+    document.getElementById('checkinBtn').addEventListener('click', async () => {
+        await addCredits(30, 10);
+        toast('Check-in +30 tokens!', 'success');
+    });
+
+    document.getElementById('nfBtn').addEventListener('click', async () => {
+        const valor = parseFloat(document.getElementById('valorNF').value);
+        if (!valor || valor <= 0) return toast('Valor inválido', 'error');
+        const cred = Math.floor(valor * 10);
+        await addCredits(cred, Math.floor(cred * 0.3));
+        document.getElementById('valorNF').value = '';
+        toast(`Nota validada! +${cred} tokens`, 'success');
+    });
+
+    async function carregarParceiros() {
+        const snap = await db.collection('partners').get();
+        const partners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        document.getElementById('partnersList').innerHTML = partners.map(p =>
+            `<div class="card"><strong>${p.name}</strong> - ${p.category}<br>💰 ${p.price || 10}🔥 <button class="btn btn-primary btn-sm" onclick="pagarParceiro('${p.id}',${p.price || 10})">Pagar</button></div>`
+        ).join('');
+        const sel = document.getElementById('checkinPartnerSelect');
+        if (sel) sel.innerHTML = partners.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+    window.pagarParceiro = async (id, custo) => {
+        if ((userData.credits || 0) < custo) return toast('Saldo insuficiente', 'error');
+        await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-custo) });
+        userData.credits -= custo;
+        renderUI();
+        toast(`Pagamento de ${custo} tokens!`, 'success');
+    };
+
+    function carregarMissoes() {
+        document.getElementById('missionsList').innerHTML = missions.map(m =>
+            `<div class="card"><div>${m.title}</div><div>+${m.reward}🔥</div><button class="btn btn-primary btn-sm" onclick="cumprirMissao('${m.id}')">Cumprir</button></div>`
+        ).join('');
+    }
+    window.cumprirMissao = async id => {
+        const m = missions.find(i => i.id === id);
+        if (m) { await addCredits(m.reward, m.reward * 0.3); toast(`Missão ${m.title} concluída!`, 'success'); }
+    };
+
+    async function carregarRanking() {
+        const snap = await db.collection('perfis').orderBy('trust', 'desc').limit(30).get();
+        document.getElementById('rankingList').innerHTML = snap.docs.map((d, i) => {
+            const u = d.data();
+            return `<div>${i + 1}. ${u.perfil?.nome || u.cpf || 'Anônimo'} - 🔥${u.credits || 0}</div>`;
+        }).join('');
+    }
+
+    async function carregarSorteios() {
+        const snap = await db.collection('sorteios').get();
+        document.getElementById('sorteiosList').innerHTML = snap.docs.map(d => d.data()).map(s => `<div>🎲 ${s.nome} - Prêmio: ${s.premio}</div>`).join('') || '<p>Nenhum sorteio ativo</p>';
+        document.getElementById('meusTickets').innerHTML = `🎟️ Seus ingressos: ${userData.tickets || 0}`;
+    }
+    window.comprarTicket = async () => {
+        if ((userData.credits || 0) < 50) return toast('Tokens insuficientes', 'error');
+        await db.collection('perfis').doc(userData.uid).update({
+            credits: firebase.firestore.FieldValue.increment(-50),
+            tickets: firebase.firestore.FieldValue.increment(1)
+        });
+        userData.credits -= 50;
+        userData.tickets = (userData.tickets || 0) + 1;
+        renderUI();
+        toast('Ingresso comprado!', 'success');
+    };
+
+    async function carregarHabilidades() {
+        let snap = await db.collection('skills').get();
+        if (snap.empty) {
+            await db.collection('skills').doc('skill1').set({ id: 'skill1', name: 'Visão de Águia', desc: '+10% scans', cost: 2 });
+            snap = await db.collection('skills').get();
+        }
+        allSkills = snap.docs.map(d => d.data());
+        const userSkills = userData.habilidades || [];
+        document.getElementById('skillsTree').innerHTML = allSkills.map(s =>
+            `<div class="skill-card ${userSkills.includes(s.id) ? 'unlocked' : ''}" onclick="comprarHabilidade('${s.id}')"><strong>${s.name}</strong><br>${s.desc}<br>Custo: ${s.cost} pts</div>`
+        ).join('');
+    }
+    window.comprarHabilidade = async id => {
+        const skill = allSkills.find(s => s.id === id);
+        if (!skill) return;
+        if ((userData.skillPoints || 0) < skill.cost) return toast('Pontos insuficientes', 'error');
+        if ((userData.habilidades || []).includes(id)) return toast('Já possui', 'error');
+        await db.collection('perfis').doc(userData.uid).update({
+            habilidades: firebase.firestore.FieldValue.arrayUnion(id),
+            skillPoints: firebase.firestore.FieldValue.increment(-skill.cost)
+        });
+        userData.skillPoints -= skill.cost;
+        userData.habilidades = [...(userData.habilidades || []), id];
+        toast(`Habilidade ${skill.name} adquirida!`, 'success');
+        carregarHabilidades();
+    };
+
+    async function carregarConquistas() {
+        let snap = await db.collection('achievements').get();
+        if (snap.empty) {
+            await db.collection('achievements').doc('ach1').set({ id: 'ach1', name: 'Primeiro Scan', desc: 'Escanear 1 QR' });
+            snap = await db.collection('achievements').get();
+        }
+        allAchievements = snap.docs.map(d => d.data());
+        const userAch = userData.conquistas || [];
+        document.getElementById('achievementsList').innerHTML = allAchievements.map(a =>
+            `<span class="badge-medal">${a.name} ${userAch.includes(a.id) ? '🏅' : '🔒'}</span>`
+        ).join('');
+    }
+
+    document.getElementById('globalMsgBtn').addEventListener('click', async () => {
+        const msg = document.getElementById('msgGlobal').value.trim();
+        if (!msg) return toast('Escreva uma mensagem', 'error');
+        await db.collection('globalChat').add({
+            uid: userData.uid,
+            nome: userData.perfil?.nome || 'Anônimo',
+            texto: msg,
+            expira: Date.now() + 60000,
+            data: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('msgGlobal').value = '';
+    });
+
+    function carregarMuralGlobal() {
+        db.collection('globalChat').where('expira', '>', Date.now()).orderBy('data', 'desc').onSnapshot(snap => {
+            document.getElementById('globalMural').innerHTML = snap.docs.map(d => {
                 const m = d.data();
-                return `<div class="mural-item"><strong>${m.nome||'Anônimo'}</strong>: ${m.texto}</div>`;
+                return `<div class="mural-item"><strong>${m.nome || 'Anônimo'}</strong>: ${m.texto}</div>`;
             }).join('');
         });
+    }
 
-        async function carregarRanking() {
-            const snap = await db.collection('perfis').orderBy('trust', 'desc').limit(20).get();
-            const lista = document.getElementById('rankingList');
-            if (lista) lista.innerHTML = snap.docs.map((d, i) => {
-                const u = d.data();
-                return `<div style="padding:8px 0; border-bottom:1px solid #333;">${i+1}. ${u.perfil?.nome||'Anônimo'} - 🔥${u.credits||0}</div>`;
-            }).join('');
-        }
+    async function carregarDestinatarios() {
+        const snap = await db.collection('perfis').get();
+        const membros = snap.docs.filter(d => d.id !== userData.uid).map(d => ({
+            id: d.id,
+            nome: d.data().perfil?.nome || d.data().cpf || 'Anônimo'
+        }));
+        const sel = document.getElementById('destinatarioSelect');
+        if (sel) sel.innerHTML = membros.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+    }
 
-        window.listarMembros = async function() {
-            const snap = await db.collection('perfis').limit(20).get();
-            document.getElementById('adminList').innerHTML = snap.docs.map(d => {
-                const u = d.data();
-                return `<div style="padding:8px; border-bottom:1px solid #333;">📧 ${u.email||'N/A'} | 🔥${u.credits||0}</div>`;
-            }).join('');
-        };
+    window.trocarIngressoPorKit = async () => {
+        if ((userData.tickets || 0) < 1) return toast('Sem ingressos', 'error');
+        await db.collection('perfis').doc(userData.uid).update({ tickets: firebase.firestore.FieldValue.increment(-1) });
+        userData.tickets--;
+        renderUI();
+        toast('Kit solicitado!', 'success');
+    };
 
-        window.mintCredits = async function() {
-            const email = prompt('E-mail:');
-            if (!email) return;
-            const qtd = parseInt(prompt('Quantos tokens?'));
-            if (!qtd || qtd <= 0) return;
-            const snap = await db.collection('perfis').where('email', '==', email).get();
-            if (snap.empty) return toast('Usuário não encontrado', 'error');
-            await snap.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(qtd) });
-            toast('+' + qtd + ' tokens para ' + email, 'success');
-        };
+    document.getElementById('feedbackBtn').addEventListener('click', async () => {
+        const msg = document.getElementById('feedbackMsg').value.trim();
+        if (!msg) return toast('Escreva um feedback', 'error');
+        await db.collection('feedbacks').add({
+            userId: userData.uid,
+            nome: userData.perfil?.nome || 'Anônimo',
+            mensagem: msg,
+            data: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('feedbackMsg').value = '';
+        toast('Feedback enviado!', 'success');
+    });
 
-        window.navigateTo = function(view) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            const el = document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1));
-            if (el) el.classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-            const btn = document.querySelector('.nav-item[data-view="' + view + '"]');
-            if (btn) btn.classList.add('active');
-            if (view === 'ranking') carregarRanking();
-            if (view === 'scanner') stopScanner();
-        };
+    window.listarMembros = async () => {
+        const snap = await db.collection('perfis').limit(30).get();
+        document.getElementById('adminList').innerHTML = snap.docs.map(d => {
+            const u = d.data();
+            return `<div style="padding:8px; border-bottom:1px solid #333;">📧 ${u.email || 'N/A'} | 🔥${u.credits || 0} | Role: ${u.role || 'user'}</div>`;
+        }).join('');
+    };
 
-        if ('serviceWorker' in navigator) {
-            const swCode = 'self.addEventListener("install",function(e){self.skipWaiting()});self.addEventListener("activate",function(e){e.waitUntil(clients.claim())});self.addEventListener("fetch",function(e){e.respondWith(caches.match(e.request).then(function(r){return r||fetch(e.request)}))});';
-            navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(() => {});
-        }
-    </script>
+    window.mintCreditsComValidacao = async () => {
+        const email = prompt('E-mail do usuário:');
+        if (!email) return;
+        const qtd = parseInt(prompt('Quantos tokens?'));
+        if (!qtd || qtd <= 0) return;
+        const snap = await db.collection('perfis').where('email', '==', email).get();
+        if (snap.empty) return toast('Usuário não encontrado', 'error');
+        await snap.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(qtd) });
+        toast(`+${qtd} tokens para ${email}`, 'success');
+    };
+
+    window.verAdminLogs = async () => {
+        const snap = await db.collection('admin_logs').orderBy('timestamp', 'desc').limit(50).get();
+        document.getElementById('adminLogsArea').innerHTML = '<h4>Últimas ações</h4>' + snap.docs.map(d => {
+            const l = d.data();
+            return `<div style="font-size:0.7rem; padding:4px; border-bottom:1px solid #333;">${l.action} - ${l.timestamp?.toDate?.()?.toLocaleString() || 'N/A'}</div>`;
+        }).join('');
+    };
+
+    function navigateTo(view) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const el = document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1));
+        if (el) el.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.nav-item[data-view="${view}"]`);
+        if (btn) btn.classList.add('active');
+        if (view === 'admin' && userData.role === 'admin') listarMembros();
+        if (view === 'chatPrivado') carregarDestinatarios();
+        if (view === 'scanner') stopScanner();
+    }
+    window.navigateTo = navigateTo;
+
+    window.mudarCorTema = cor => {
+        document.documentElement.style.setProperty('--ember', cor);
+        document.documentElement.style.setProperty('--ember-bright', cor);
+    };
+    window.toggleDark = () => {
+        document.body.style.background = document.body.style.background === '#050302' ? '#1a120c' : '#050302';
+    };
+
+    document.getElementById('uploadProfileBtn')?.addEventListener('click', () => document.getElementById('profilePicInput').click());
+
+    if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(clients.claim())); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
+        navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }))).catch(() => {});
+    }
+</script>
 </body>
 </html>
