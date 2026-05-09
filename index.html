@@ -92,7 +92,7 @@
         <div style="font-size:70px; filter: drop-shadow(0 0 8px #e06c2e);">💀</div>
         <h2 style="color:var(--ember-bright); margin:8px 0;">IRMANDADE DA ESTRADA</h2>
         <p style="color:var(--text-muted);">MotoClube · Economia Tokens</p>
-        <input type="text" id="emailLogin" placeholder="E-mail ou CPF">
+        <input type="text" id="emailLogin" placeholder="E-mail ou CPF" value="cristophersmonteiro357@gmail.com">
         <input type="password" id="senhaLogin" placeholder="Senha">
         <div style="display:flex; gap:8px; margin-top:12px;">
             <button class="btn btn-primary" style="flex:1" id="loginBtn">⚡ ENTRAR</button>
@@ -193,7 +193,8 @@
                     <div class="avatar-circle" style="width:80px;height:80px;" id="profilePicPreview"><span>💀</span></div>
                     <div><button class="btn btn-sm" id="uploadProfileBtn">Alterar Foto</button><input type="file" id="profilePicInput" accept="image/*" style="display:none;"></div>
                 </div>
-                <div class="profile-field"><label>Nome</label><input id="perfilNome" placeholder="Seu nome"></div>
+                <div class="profile-field"><label>Nome</label><input id="perfilNome" placeholder="Seu nome" value="dementos"></div>
+                <div class="profile-field"><label>CPF</label><input id="perfilCpf" placeholder="CPF" value="14393059786"></div>
                 <div class="profile-field"><label>Idade</label><input id="perfilIdade" type="number"></div>
                 <div class="profile-field"><label>Habilitado (CNH)</label><select id="perfilHabilitado"><option>sim</option><option>não</option></select></div>
                 <div class="profile-field"><label>Moto</label><input id="perfilMoto" placeholder="Modelo"></div>
@@ -311,14 +312,12 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    const analytics = firebase.analytics();
 
     let userData = {}, allSkills = [], allAchievements = [], privateListener = null;
     let html5QrScanner = null;
     let exchangeRate = 0.05, totalTokens = 0, reserva = 10000;
     let loginCooldown = false;
 
-    // ========== UTILITÁRIOS ==========
     function toast(msg, type='info') {
         let c = document.getElementById('toastStack');
         let t = document.createElement('div');
@@ -363,17 +362,6 @@
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    async function logAdminAction(action, details) {
-        if (!userData || userData.role !== 'admin') return;
-        await db.collection('admin_logs').add({
-            adminUid: userData.uid,
-            adminCpf: userData.cpf,
-            action,
-            details,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
     function setLoading(btn, isLoading) {
         if (isLoading) {
             btn.disabled = true;
@@ -385,7 +373,7 @@
         }
     }
 
-    // ========== AUTENTICAÇÃO (USANDO COLEÇÃO 'perfis') ==========
+    // ========== AUTENTICAÇÃO (USANDO 'perfis' com UID correto) ==========
     async function handleLogin() {
         if (loginCooldown) return toast("Aguarde alguns segundos...", "error");
         let input = document.getElementById('emailLogin').value.trim();
@@ -445,32 +433,61 @@
 
     window.logout = () => { auth.signOut(); };
 
-    // ========== onAuthStateChanged (COM CRIAÇÃO AUTOMÁTICA DO DOCUMENTO) ==========
+    // ========== MIGRAÇÃO E CARREGAMENTO DO PERFIL ==========
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             document.getElementById('loadingData').style.display = 'flex';
             try {
-                const userRef = db.collection('perfis').doc(user.uid);
-                const docSnap = await userRef.get();
+                const uidReal = user.uid;
+                const userRef = db.collection('perfis').doc(uidReal);
+                let docSnap = await userRef.get();
+                
                 if (!docSnap.exists) {
-                    // Cria documento automaticamente se não existir (fallback para usuários antigos)
-                    const isFirst = (await db.collection('perfis').limit(1).get()).empty;
-                    const newData = {
-                        email: user.email,
-                        cpf: user.email.includes('@cpf.irmandade.app') ? user.email.split('@')[0] : '',
-                        credits: isFirst ? 500 : 0,
-                        trust: 0,
-                        role: isFirst ? 'admin' : 'user',
-                        status: 'adimplente',
-                        perfil: { nome: user.email.split('@')[0] },
-                        tickets: 0,
-                        skillPoints: isFirst ? 10 : 0,
-                        plano: 0,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    await userRef.set(newData);
+                    // Tenta migrar dados de documento antigo (ex: com ID diferente)
+                    const email = user.email;
+                    let query = await db.collection('perfis').where('email', '==', email).get();
+                    if (query.empty) {
+                        query = await db.collection('perfis').where('gmail', '==', email).get();
+                    }
+                    if (!query.empty) {
+                        const oldDoc = query.docs[0];
+                        const oldData = oldDoc.data();
+                        await userRef.set({
+                            email: email,
+                            cpf: oldData.cpf || "14393059786",
+                            credits: oldData.credits || 100,
+                            trust: oldData.trust || 0,
+                            role: oldData.role || 'user',
+                            status: oldData.status || 'adimplente',
+                            perfil: oldData.perfil || { nome: "dementos" },
+                            tickets: oldData.tickets || 0,
+                            skillPoints: oldData.skillPoints || 0,
+                            plano: oldData.plano || 0,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        await oldDoc.ref.delete();
+                        toast("Perfil migrado com sucesso!", "success");
+                    } else {
+                        // Cria documento novo padrão
+                        const isFirst = (await db.collection('perfis').limit(1).get()).empty;
+                        await userRef.set({
+                            email: email,
+                            cpf: "14393059786",
+                            credits: isFirst ? 500 : 100,
+                            trust: 0,
+                            role: isFirst ? 'admin' : 'user',
+                            status: 'adimplente',
+                            perfil: { nome: "dementos" },
+                            tickets: 0,
+                            skillPoints: isFirst ? 10 : 0,
+                            plano: 0,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    docSnap = await userRef.get();
                 }
-                userData = { uid: user.uid, ...(await userRef.get()).data() };
+                
+                userData = { uid: uidReal, ...docSnap.data() };
                 document.getElementById('loadingData').style.display = 'none';
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
@@ -491,7 +508,7 @@
         }
     });
 
-    // ========== RENDER PRINCIPAL (USANDO 'perfis') ==========
+    // ========== RENDER PRINCIPAL ==========
     async function renderUI() {
         if (!userData) return;
         document.getElementById('creditsAmount').innerText = userData.credits || 0;
@@ -507,6 +524,13 @@
             const preview = document.getElementById('profilePicPreview');
             if (preview) preview.innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
         }
+        document.getElementById('perfilNome').value = userData.perfil?.nome || "";
+        document.getElementById('perfilCpf').value = userData.cpf || "";
+        document.getElementById('perfilIdade').value = userData.perfil?.idade || "";
+        document.getElementById('perfilHabilitado').value = userData.perfil?.habilitado || "sim";
+        document.getElementById('perfilMoto').value = userData.perfil?.moto || "";
+        document.getElementById('perfilPlaca').value = userData.perfil?.placa || "";
+        
         carregarMissoes(); carregarRanking(); carregarSorteios(); carregarCheckins(); carregarGaleria(); carregarParceiros(); carregarHabilidades(); carregarConquistas();
     }
 
@@ -521,7 +545,6 @@
         renderUI();
     }
 
-    // ========== PERFIL ==========
     async function salvarPerfil() {
         let perfil = {
             nome: document.getElementById('perfilNome').value,
@@ -530,8 +553,10 @@
             moto: document.getElementById('perfilMoto').value,
             placa: document.getElementById('perfilPlaca').value
         };
-        await db.collection('perfis').doc(userData.uid).update({ perfil });
+        let cpf = document.getElementById('perfilCpf').value;
+        await db.collection('perfis').doc(userData.uid).update({ perfil, cpf });
         userData.perfil = perfil;
+        userData.cpf = cpf;
         toast("Perfil salvo", "success");
     }
 
@@ -550,7 +575,7 @@
         setLoading(btn, false);
     });
 
-    // ========== QR CODE (IDÊNTICO) ==========
+    // ========== QR CODE ==========
     const HMAC_KEY = "IRMANDADE_SECRET_KEY_2024";
     async function generateSecureQRData(uid) {
         const nonce = Date.now().toString() + Math.random().toString(36);
@@ -684,7 +709,7 @@
     function carregarMissoes() { document.getElementById('missionsList').innerHTML = missions.map(m => `<div class="card"><div>${m.title}</div><div>+${m.reward}🔥</div><button class="btn btn-primary btn-sm" onclick="cumprirMissao('${m.id}')">Cumprir</button></div>`).join(''); }
     window.cumprirMissao = async (id) => { let m = missions.find(i => i.id === id); if (m) { await addCredits(m.reward, m.reward * 0.3); toast(`Missão ${m.title} concluída!`, "success"); } };
 
-    // ========== RANKING (USANDO 'perfis') ==========
+    // ========== RANKING ==========
     async function carregarRanking() { let snap = await db.collection('perfis').orderBy('trust', 'desc').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('rankingList').innerHTML = lista.map((u, i) => `<div>${i+1}. ${u.perfil?.nome || u.cpf} - 🔥${u.credits || 0}</div>`).join(''); }
 
     // ========== SORTEIOS ==========
@@ -722,7 +747,7 @@
     window.enviarFeedback = async () => { let msg = document.getElementById('feedbackMsg').value; if (!msg.trim()) return; await db.collection('feedbacks').add({ userId: userData.uid, nome: userData.perfil?.nome || userData.cpf, mensagem: msg, data: new Date() }); toast("Feedback enviado", "success"); document.getElementById('feedbackMsg').value = ''; carregarMeusFeedbacks(); };
     async function carregarMeusFeedbacks() { let snap = await db.collection('feedbacks').where('userId', '==', userData.uid).orderBy('data', 'desc').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('meusFeedbacks').innerHTML = lista.map(f => `<div class="chat-message">${new Date(f.data.toDate()).toLocaleString()}<br>${f.mensagem}</div>`).join(''); }
 
-    // ========== ADMIN (USANDO 'perfis') ==========
+    // ========== ADMIN ==========
     window.listarMembros = async () => { let snap = await db.collection('perfis').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('adminList').innerHTML = lista.map(m => `<div>📧 ${m.email} (CPF: ${m.cpf}) - 🔥${m.credits || 0} <button onclick="darCreditos('${m.id}', 100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}', -100)">-100</button></div>`).join(''); };
     window.darCreditos = async (uid, amount) => { await db.collection('perfis').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) }); toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros(); };
     window.adminGerenciarHabilidades = () => { document.getElementById('habilidadesAdminArea').innerHTML = `<input id="skillName" placeholder="Nome"><input id="skillCost" placeholder="Custo"><button onclick="criarHabilidade()">Criar</button><div id="listaSkillsAdmin"></div>`; };
@@ -787,19 +812,20 @@
     }
 </script>
 
-<!-- INSTRUÇÃO: Cole estas regras no Firestore Console (aba Regras) e publique -->
-<!--
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /perfis/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+<!-- 
+    ⚡ COLE ESTAS REGRAS NO CONSOLE DO FIRESTORE (aba "Regras") e clique em "Publicar":
+    
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+        match /perfis/{userId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+        match /{document=**} {
+          allow read, write: if request.auth != null;
+        }
+      }
     }
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
 -->
 </body>
 </html>
