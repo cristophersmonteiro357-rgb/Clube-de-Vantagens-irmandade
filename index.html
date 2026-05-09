@@ -9,9 +9,21 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* Seu estilo original permanece igual – omitido por brevidade, mantenha o mesmo CSS do seu arquivo */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root { --bg-deep: #050302; --bg-card: #0f0c0a; --surface: #1a1512; --ember: #e06c2e; --ember-bright: #ff8c4a; --gold: #d4af37; --text-primary: #f5ede0; --text-muted: #8a7a6a; --border-ember: rgba(224,108,46,0.4); --safe-bottom: env(safe-area-inset-bottom, 16px); --font-body: 'Inter', system-ui, sans-serif; --neon-glow: 0 0 5px #e06c2e; }
+        :root {
+            --bg-deep: #050302;
+            --bg-card: #0f0c0a;
+            --surface: #1a1512;
+            --ember: #e06c2e;
+            --ember-bright: #ff8c4a;
+            --gold: #d4af37;
+            --text-primary: #f5ede0;
+            --text-muted: #8a7a6a;
+            --border-ember: rgba(224,108,46,0.4);
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+            --font-body: 'Inter', system-ui, sans-serif;
+            --neon-glow: 0 0 5px #e06c2e;
+        }
         body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-body); height: 100vh; overflow: hidden; }
         .bg-flame { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(224,108,46,0.1) 0%, transparent 70%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path fill="%23e06c2e" d="M50,10 L60,40 L90,40 L65,60 L75,90 L50,70 L25,90 L35,60 L10,40 L40,40 Z"/></svg>'); background-size: 80px; pointer-events: none; z-index: 0; }
         .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 400; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; }
@@ -285,7 +297,7 @@
 </div>
 
 <script>
-    // Configuração do Firebase
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyDbb96DSw05nFxK8W6-khfbkRMn9CIheq8",
         authDomain: "clube-de-vantagens-d748e.firebaseapp.com",
@@ -301,7 +313,7 @@
     const storage = firebase.storage();
     const analytics = firebase.analytics();
 
-    let currentUser = null, userData = {}, allSkills = [], allAchievements = [], privateListener = null;
+    let userData = {}, allSkills = [], allAchievements = [], privateListener = null;
     let html5QrScanner = null;
     let exchangeRate = 0.05, totalTokens = 0, reserva = 10000;
     let loginCooldown = false;
@@ -373,9 +385,9 @@
         }
     }
 
-    // ========== AUTENTICAÇÃO ==========
+    // ========== AUTENTICAÇÃO (USANDO COLEÇÃO 'perfis') ==========
     async function handleLogin() {
-        if (loginCooldown) return toast("Aguarde alguns segundos antes de tentar novamente", "error");
+        if (loginCooldown) return toast("Aguarde alguns segundos...", "error");
         let input = document.getElementById('emailLogin').value.trim();
         let pass = document.getElementById('senhaLogin').value;
         if (!input || !pass) return toast("Preencha e-mail/CPF e senha", "error");
@@ -407,11 +419,10 @@
         setLoading(btn, true);
         loginCooldown = true;
         try {
-            // Verifica se é o primeiro usuário (para definir admin)
             const usersSnap = await db.collection('perfis').limit(1).get();
             const isFirst = usersSnap.empty;
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            const novoUsuario = {
+            await db.collection('perfis').doc(cred.user.uid).set({
                 email: email,
                 cpf: cpf.replace(/\D/g,''),
                 credits: isFirst ? 500 : 0,
@@ -423,8 +434,7 @@
                 skillPoints: isFirst ? 10 : 0,
                 plano: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection('perfis').doc(cred.user.uid).set(novoUsuario);
+            });
             toast("Conta criada! Faça login.", "success");
         } catch (e) {
             toast(e.message, "error");
@@ -435,15 +445,15 @@
 
     window.logout = () => { auth.signOut(); };
 
-    // ========== onAuthStateChanged (CORRIGIDO PARA USAR 'perfis') ==========
+    // ========== onAuthStateChanged (COM CRIAÇÃO AUTOMÁTICA DO DOCUMENTO) ==========
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             document.getElementById('loadingData').style.display = 'flex';
             try {
                 const userRef = db.collection('perfis').doc(user.uid);
-                let docSnap = await userRef.get();
+                const docSnap = await userRef.get();
                 if (!docSnap.exists) {
-                    // Cria documento automaticamente se não existir (fallback)
+                    // Cria documento automaticamente se não existir (fallback para usuários antigos)
                     const isFirst = (await db.collection('perfis').limit(1).get()).empty;
                     const newData = {
                         email: user.email,
@@ -459,9 +469,8 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
                     await userRef.set(newData);
-                    docSnap = await userRef.get();
                 }
-                userData = { uid: user.uid, ...docSnap.data() };
+                userData = { uid: user.uid, ...(await userRef.get()).data() };
                 document.getElementById('loadingData').style.display = 'none';
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
@@ -482,7 +491,7 @@
         }
     });
 
-    // ========== RENDER PRINCIPAL (ATUALIZA PERFIL) ==========
+    // ========== RENDER PRINCIPAL (USANDO 'perfis') ==========
     async function renderUI() {
         if (!userData) return;
         document.getElementById('creditsAmount').innerText = userData.credits || 0;
@@ -497,14 +506,6 @@
         if (userData.perfil?.fotoURL) {
             const preview = document.getElementById('profilePicPreview');
             if (preview) preview.innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
-        }
-        // Preencher campos do perfil se existirem
-        if (userData.perfil) {
-            document.getElementById('perfilNome').value = userData.perfil.nome || '';
-            document.getElementById('perfilIdade').value = userData.perfil.idade || '';
-            document.getElementById('perfilHabilitado').value = userData.perfil.habilitado || 'sim';
-            document.getElementById('perfilMoto').value = userData.perfil.moto || '';
-            document.getElementById('perfilPlaca').value = userData.perfil.placa || '';
         }
         carregarMissoes(); carregarRanking(); carregarSorteios(); carregarCheckins(); carregarGaleria(); carregarParceiros(); carregarHabilidades(); carregarConquistas();
     }
@@ -549,7 +550,7 @@
         setLoading(btn, false);
     });
 
-    // ========== QR CODE (mantido igual) ==========
+    // ========== QR CODE (IDÊNTICO) ==========
     const HMAC_KEY = "IRMANDADE_SECRET_KEY_2024";
     async function generateSecureQRData(uid) {
         const nonce = Date.now().toString() + Math.random().toString(36);
@@ -683,7 +684,7 @@
     function carregarMissoes() { document.getElementById('missionsList').innerHTML = missions.map(m => `<div class="card"><div>${m.title}</div><div>+${m.reward}🔥</div><button class="btn btn-primary btn-sm" onclick="cumprirMissao('${m.id}')">Cumprir</button></div>`).join(''); }
     window.cumprirMissao = async (id) => { let m = missions.find(i => i.id === id); if (m) { await addCredits(m.reward, m.reward * 0.3); toast(`Missão ${m.title} concluída!`, "success"); } };
 
-    // ========== RANKING ==========
+    // ========== RANKING (USANDO 'perfis') ==========
     async function carregarRanking() { let snap = await db.collection('perfis').orderBy('trust', 'desc').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('rankingList').innerHTML = lista.map((u, i) => `<div>${i+1}. ${u.perfil?.nome || u.cpf} - 🔥${u.credits || 0}</div>`).join(''); }
 
     // ========== SORTEIOS ==========
@@ -706,7 +707,7 @@
     window.enviarMensagemGlobal = async () => { let tempo = getTempoGlobal(); if (!tempo) return toast("Seu plano não pode postar no mural", "error"); let msg = document.getElementById('msgGlobal').value; if (!msg.trim()) return; await db.collection('globalChat').add({ uid: userData.uid, nome: userData.perfil?.nome || userData.cpf, texto: msg, expira: Date.now() + tempo, data: new Date() }); document.getElementById('msgGlobal').value = ''; };
     function carregarMuralGlobal() { db.collection('globalChat').where('expira', '>', Date.now()).orderBy('data', 'desc').onSnapshot(snap => { let msgs = snap.docs.map(d => d.data()); document.getElementById('globalMural').innerHTML = msgs.map(m => `<div class="mural-item"><strong>${m.nome}</strong>: ${m.texto}</div>`).join(''); }); }
 
-    // ========== CHAT PRIVADO (criptografia) ==========
+    // ========== CHAT PRIVADO ==========
     async function derivarChave(u1, u2) { let seed = u1 < u2 ? u1+u2 : u2+u1; return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seed)); }
     async function criptografar(texto, chave) { let iv = crypto.getRandomValues(new Uint8Array(12)); let enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chave, new TextEncoder().encode(texto)); return { ciphertext: Array.from(new Uint8Array(enc)), iv: Array.from(iv) }; }
     async function descriptografar(obj, chave) { let dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(obj.iv) }, chave, new Uint8Array(obj.ciphertext)); return new TextDecoder().decode(dec); }
@@ -721,7 +722,7 @@
     window.enviarFeedback = async () => { let msg = document.getElementById('feedbackMsg').value; if (!msg.trim()) return; await db.collection('feedbacks').add({ userId: userData.uid, nome: userData.perfil?.nome || userData.cpf, mensagem: msg, data: new Date() }); toast("Feedback enviado", "success"); document.getElementById('feedbackMsg').value = ''; carregarMeusFeedbacks(); };
     async function carregarMeusFeedbacks() { let snap = await db.collection('feedbacks').where('userId', '==', userData.uid).orderBy('data', 'desc').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('meusFeedbacks').innerHTML = lista.map(f => `<div class="chat-message">${new Date(f.data.toDate()).toLocaleString()}<br>${f.mensagem}</div>`).join(''); }
 
-    // ========== ADMIN (as funções precisam usar 'perfis' também) ==========
+    // ========== ADMIN (USANDO 'perfis') ==========
     window.listarMembros = async () => { let snap = await db.collection('perfis').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('adminList').innerHTML = lista.map(m => `<div>📧 ${m.email} (CPF: ${m.cpf}) - 🔥${m.credits || 0} <button onclick="darCreditos('${m.id}', 100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}', -100)">-100</button></div>`).join(''); };
     window.darCreditos = async (uid, amount) => { await db.collection('perfis').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) }); toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros(); };
     window.adminGerenciarHabilidades = () => { document.getElementById('habilidadesAdminArea').innerHTML = `<input id="skillName" placeholder="Nome"><input id="skillCost" placeholder="Custo"><button onclick="criarHabilidade()">Criar</button><div id="listaSkillsAdmin"></div>`; };
@@ -734,7 +735,6 @@
     window.adminGerenciarEventos = () => { document.getElementById('eventosArea').innerHTML = `<input id="eventName" placeholder="Nome"><input id="eventMult" placeholder="Multiplicador"><input type="datetime-local" id="eventEnd"><button onclick="criarEvento()">Criar</button><div id="listaEventos"></div>`; };
     window.adminDefinirClasse = async () => { let email = prompt("E-mail do usuário:"); let classe = prompt("Nova classe:"); if (email && classe) { let q = await db.collection('perfis').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ classe }); toast(`Classe alterada para ${classe}`); } };
     window.gerenciarParceiros = () => { document.getElementById('parceirosAdminArea').innerHTML = `<input id="parNome" placeholder="Nome"><input id="parCat" placeholder="Categoria"><input id="parPrice" placeholder="Preço"><button onclick="criarParceiroAdmin()">Criar</button><div id="listaParceirosAdmin"></div>`; };
-    // Funções auxiliares admin
     window.criarHabilidade = async () => { let name = document.getElementById('skillName').value, cost = parseInt(document.getElementById('skillCost').value); let id = Date.now().toString(); await db.collection('skills').doc(id).set({ id, name, desc: "Personalizada", cost }); toast("Habilidade criada"); adminGerenciarHabilidades(); };
     window.criarConquista = async () => { let name = document.getElementById('achName').value; let id = Date.now().toString(); await db.collection('achievements').doc(id).set({ id, name, desc: "Nova conquista" }); toast("Conquista criada"); adminGerenciarConquistas(); };
     window.criarEvento = async () => { let name = document.getElementById('eventName').value, mult = parseFloat(document.getElementById('eventMult').value), end = new Date(document.getElementById('eventEnd').value).getTime(); let id = Date.now().toString(); await db.collection('events').doc(id).set({ id, name, multiplier: mult, endDate: end }); toast("Evento criado"); adminGerenciarEventos(); };
@@ -769,7 +769,6 @@
     document.getElementById('feedbackBtn').onclick = enviarFeedback;
     document.getElementById('btnStartScanner').onclick = startScanner;
     document.getElementById('btnStopScanner').onclick = stopScanner;
-    // Recuperação senha
     document.getElementById('forgotPasswordBtn').onclick = () => document.getElementById('recoveryModal').style.display = 'flex';
     document.getElementById('closeRecoveryModal').onclick = () => document.getElementById('recoveryModal').style.display = 'none';
     document.getElementById('sendEmailResetBtn').onclick = async () => {
@@ -780,7 +779,6 @@
         document.getElementById('recoveryModal').style.display = 'none';
     };
 
-    // Service Worker para PWA
     if ('serviceWorker' in navigator) {
         const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(clients.claim())); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
         const blob = new Blob([swCode], { type: 'application/javascript' });
@@ -789,32 +787,17 @@
     }
 </script>
 
-<!-- Instrução das Regras do Firestore (copie e cole no console) -->
+<!-- INSTRUÇÃO: Cole estas regras no Firestore Console (aba Regras) e publique -->
 <!--
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Coleção principal de perfis – cada usuário só acessa seu próprio documento
     match /perfis/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    // Demais coleções (tokens, checkins, etc.) – podem ser liberadas para usuários autenticados
-    match /tokens/{documentId} {
+    match /{document=**} {
       allow read, write: if request.auth != null;
     }
-    match /checkins/{doc} { allow read, write: if request.auth != null; }
-    match /notas/{doc} { allow read, write: if request.auth != null; }
-    match /partners/{doc} { allow read, write: if request.auth != null; }
-    match /galeria/{doc} { allow read, write: if request.auth != null; }
-    match /skills/{doc} { allow read, write: if request.auth != null; }
-    match /achievements/{doc} { allow read, write: if request.auth != null; }
-    match /globalChat/{doc} { allow read, write: if request.auth != null; }
-    match /privateChat/{doc} { allow read, write: if request.auth != null; }
-    match /feedbacks/{doc} { allow read, write: if request.auth != null; }
-    match /events/{doc} { allow read, write: if request.auth != null; }
-    match /sorteios/{doc} { allow read, write: if request.auth != null; }
-    match /admin_logs/{doc} { allow read, write: if request.auth != null && get(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.role == 'admin'; }
-    match /usedQrHashes/{hash} { allow read, write: if request.auth != null; }
   }
 }
 -->
