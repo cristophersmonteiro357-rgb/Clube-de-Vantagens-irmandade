@@ -22,7 +22,6 @@
             --border-ember: rgba(224,108,46,0.4);
             --safe-bottom: env(safe-area-inset-bottom, 16px);
             --font-body: 'Inter', system-ui, sans-serif;
-            --neon-glow: 0 0 5px #e06c2e;
         }
         body { background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-body); height: 100vh; overflow: hidden; }
         .bg-flame { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(224,108,46,0.1) 0%, transparent 70%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><path fill="%23e06c2e" d="M50,10 L60,40 L90,40 L65,60 L75,90 L50,70 L25,90 L35,60 L10,40 L40,40 Z"/></svg>'); background-size: 80px; pointer-events: none; z-index: 0; }
@@ -38,8 +37,8 @@
         .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
         .view { display: none; flex-direction: column; gap: 20px; animation: fade 0.2s; }
         .view.active { display: flex; }
-        .card { background: rgba(26,21,18,0.85); backdrop-filter: blur(8px); border-radius: 28px; padding: 20px; border: 1px solid var(--border-ember); transition: 0.2s; }
-        .btn { border: none; border-radius: 40px; padding: 10px 20px; font-weight: 600; cursor: pointer; background: #241e1a; color: var(--text-primary); border: 1px solid var(--border-ember); transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .card { background: rgba(26,21,18,0.85); backdrop-filter: blur(8px); border-radius: 28px; padding: 20px; border: 1px solid var(--border-ember); }
+        .btn { border: none; border-radius: 40px; padding: 10px 20px; font-weight: 600; cursor: pointer; background: #241e1a; color: var(--text-primary); border: 1px solid var(--border-ember); display: inline-flex; align-items: center; gap: 8px; justify-content: center; transition: 0.2s; }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: linear-gradient(135deg, #b9591f, #e06c2e); color: #0a0502; border: none; box-shadow: 0 2px 8px rgba(224,108,46,0.3); }
         .btn-outline { background: transparent; border: 1px solid var(--ember); color: var(--ember-bright); }
@@ -80,13 +79,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics-compat.js"></script>
 </head>
 <body>
 <div class="bg-flame"></div>
 <div class="toast-stack" id="toastStack"></div>
 
-<!-- Login Screen -->
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--bg-deep); display:flex; align-items:center; justify-content:center; z-index:200;">
     <div class="card" style="max-width:380px; width:90%; text-align:center;">
         <div style="font-size:70px; filter: drop-shadow(0 0 8px #e06c2e);">💀</div>
@@ -105,7 +102,6 @@
     </div>
 </div>
 
-<!-- Modal Recuperação -->
 <div id="recoveryModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; display:none; align-items:center; justify-content:center;">
     <div class="card" style="max-width:400px; width:90%;">
         <h3>Recuperar senha</h3>
@@ -118,13 +114,11 @@
     </div>
 </div>
 
-<!-- Loading -->
 <div id="loadingData" style="display:none;" class="loading-full">
     <div class="spinner" style="width:40px; height:40px;"></div>
     <span>Carregando seus dados...</span>
 </div>
 
-<!-- App Principal -->
 <div id="app">
     <div class="topbar">
         <div class="logo"><i class="fas fa-skull"></i><span>Estrada</span></div>
@@ -134,7 +128,6 @@
         </div>
     </div>
     <div class="content">
-        <!-- HOME -->
         <div class="view active" id="viewHome">
             <div class="card">
                 <div style="font-size:14px;">Saldo de Tokens</div>
@@ -166,16 +159,14 @@
             </div>
         </div>
 
-        <!-- QR -->
         <div class="view" id="viewQr">
             <div class="card"><h3><i class="fas fa-qrcode"></i> Meu QR Code</h3>
                 <div id="qrContainer" style="text-align:center; min-height:200px;"></div>
                 <button class="btn btn-primary btn-block" onclick="generateQR()">🔥 Gerar QR Seguro</button>
-                <p class="text-muted" style="font-size:10px; margin-top:8px;">Válido por 5 min • Assinado</p>
+                <p style="font-size:10px; margin-top:8px;">Válido por 5 min • Assinado</p>
             </div>
         </div>
 
-        <!-- Scanner -->
         <div class="view" id="viewScanner">
             <div class="card"><h3><i class="fas fa-camera"></i> Escanear QR</h3>
                 <div id="reader"></div>
@@ -186,7 +177,6 @@
             </div>
         </div>
 
-        <!-- PERFIL -->
         <div class="view" id="viewPerfil">
             <div class="card"><h3><i class="fas fa-user-circle"></i> Meu Perfil</h3>
                 <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
@@ -205,7 +195,6 @@
             <div class="card"><h3>🎨 Tema</h3><input type="color" id="themeColor" onchange="mudarCorTema(this.value)"><button class="btn btn-outline btn-sm" onclick="toggleDark()">Modo Escuro</button></div>
         </div>
 
-        <!-- CHECK-IN -->
         <div class="view" id="viewCheckin">
             <div class="card"><h3><i class="fas fa-camera"></i> Check-in Parceiro</h3>
                 <select id="checkinPartnerSelect"></select>
@@ -214,7 +203,6 @@
             </div>
         </div>
 
-        <!-- NOTA FISCAL -->
         <div class="view" id="viewNf">
             <div class="card"><h3>🧾 Nota Fiscal</h3>
                 <input id="valorNF" placeholder="Valor R$" type="number" step="0.01">
@@ -223,46 +211,34 @@
             </div>
         </div>
 
-        <!-- PARCEIROS -->
         <div class="view" id="viewPartners"><div class="card"><h3>🏪 Parceiros</h3><div id="partnersList"></div></div></div>
 
-        <!-- MISSÕES -->
         <div class="view" id="viewMissoes"><div class="card"><h3>⚔️ Missões</h3><div id="missionsList"></div></div></div>
 
-        <!-- RANKING -->
         <div class="view" id="viewRanking"><div class="card"><h3>🏅 Ranking</h3><div id="rankingList"></div></div></div>
 
-        <!-- SORTEIOS -->
         <div class="view" id="viewSorteios"><div class="card"><h3>🎲 Sorteios</h3><div id="sorteiosList"></div><button class="btn btn-primary btn-sm" onclick="comprarTicket()">Comprar ingresso (50💰)</button><div id="meusTickets"></div></div></div>
 
-        <!-- HABILIDADES -->
         <div class="view" id="viewHabilidades">
             <div class="card"><h3>🌲 Árvore de Habilidades</h3><p>Pontos: <strong id="skillPointsDisplay">0</strong></p><div id="skillsTree" class="skill-tree"></div></div>
         </div>
 
-        <!-- CONQUISTAS -->
         <div class="view" id="viewConquistas"><div class="card"><h3>🏅 Conquistas</h3><div id="achievementsList"></div></div></div>
 
-        <!-- CHAT GLOBAL -->
         <div class="view" id="viewChatGlobal">
             <div class="card"><h3><i class="fas fa-globe"></i> Mural Global</h3><div id="globalMural" class="mural-horizontal"></div><input id="msgGlobal" placeholder="Sua mensagem..."><button class="btn btn-primary" id="globalMsgBtn">Enviar</button></div>
         </div>
 
-        <!-- CHAT PRIVADO -->
         <div class="view" id="viewChatPrivado">
-            <div class="card"><h3><i class="fas fa-lock"></i> Chat Privado</h3><select id="destinatarioSelect"></select><div id="privateChatArea" style="max-height:300px; overflow-y:auto;"></div><input id="msgPrivada" placeholder="Mensagem"><button class="btn btn-primary" id="privMsgBtn">Enviar</button></div>
+            <div class="card"><h3><i class="fas fa-lock"></i> Chat Privado</h3><select id="destinatarioSelect"></select><div id="privateChatArea" style="max-height:300px; overflow-y:auto;"></div><input id="msgPrivada" placeholder="Mensagem"><button class="btn btn-primary" id="privMsgBtn">Enviار</button></div>
         </div>
 
-        <!-- BRINDES -->
         <div class="view" id="viewBrindes"><div class="card"><h3>🎁 Kit Alimentos</h3><button class="btn btn-primary" onclick="trocarIngressoPorKit()">Trocar 1 ingresso por Kit</button></div></div>
 
-        <!-- FEEDBACK -->
         <div class="view" id="viewFeedback"><div class="card"><h3>📝 Sugestões/Reclamações</h3><textarea id="feedbackMsg" rows="3"></textarea><button class="btn btn-primary" id="feedbackBtn">Enviar</button><div id="meusFeedbacks"></div></div></div>
 
-        <!-- GALERIA -->
         <div class="view" id="viewGallery"><div class="card"><h3>📸 Galeria</h3><div id="galleryContainer" class="gallery"></div><button class="btn btn-outline btn-sm" id="addGalleryBtn">Adicionar Foto</button></div></div>
 
-        <!-- ADMIN -->
         <div class="view" id="viewAdmin">
             <div class="card"><h3>👑 Conselho + Assistente Financeiro</h3>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
@@ -298,7 +274,6 @@
 </div>
 
 <script>
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyDbb96DSw05nFxK8W6-khfbkRMn9CIheq8",
         authDomain: "clube-de-vantagens-d748e.firebaseapp.com",
@@ -313,34 +288,28 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    let userData = {}, allSkills = [], allAchievements = [], privateListener = null;
-    let html5QrScanner = null;
-    let exchangeRate = 0.05, totalTokens = 0, reserva = 10000;
-    let loginCooldown = false;
+    let userData = {}, allSkills = [], allAchievements = [], privateListener = null, html5QrScanner = null, loginCooldown = false;
+    const missions = [{ id: 'm1', title: 'Visitar Parceiro', reward: 40 }, { id: 'm2', title: 'Nota Fiscal', reward: 30 }, { id: 'm3', title: 'Check-in', reward: 25 }];
 
     function toast(msg, type='info') {
-        let c = document.getElementById('toastStack');
-        let t = document.createElement('div');
-        t.className = `toast toast-${type}`;
-        if (type === 'error') t.classList.add('toast-error');
-        if (type === 'success') t.classList.add('toast-success');
-        t.innerText = msg;
-        c.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+        let stack = document.getElementById('toastStack'), el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        if (type === 'error') el.classList.add('toast-error');
+        if (type === 'success') el.classList.add('toast-success');
+        el.textContent = msg; stack.appendChild(el); setTimeout(() => el.remove(), 3000);
     }
 
     async function compressImage(file, maxWidth=800, quality=0.7) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = e => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     let width = img.width, height = img.height;
                     if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
                     canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                     resolve(canvas.toDataURL('image/jpeg', quality));
                 };
                 img.src = e.target.result;
@@ -357,11 +326,6 @@
         return await ref.getDownloadURL();
     }
 
-    async function sha256(str) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     function setLoading(btn, isLoading) {
         if (isLoading) {
             btn.disabled = true;
@@ -373,133 +337,74 @@
         }
     }
 
-    // ========== AUTENTICAÇÃO (USANDO 'perfis' com UID correto) ==========
+    async function sha256(str) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
     async function handleLogin() {
         if (loginCooldown) return toast("Aguarde alguns segundos...", "error");
-        let input = document.getElementById('emailLogin').value.trim();
-        let pass = document.getElementById('senhaLogin').value;
+        const input = document.getElementById('emailLogin').value.trim(), pass = document.getElementById('senhaLogin').value;
         if (!input || !pass) return toast("Preencha e-mail/CPF e senha", "error");
-        const btn = document.getElementById('loginBtn');
-        setLoading(btn, true);
-        loginCooldown = true;
+        const btn = document.getElementById('loginBtn'); setLoading(btn, true); loginCooldown = true;
         try {
             let email = input;
             if (/^\d+$/.test(input)) email = `${input}@cpf.irmandade.app`;
             await auth.signInWithEmailAndPassword(email, pass);
             toast("Login realizado com sucesso!", "success");
-        } catch (e) {
-            toast(e.message, "error");
-            loginCooldown = false;
-        }
+        } catch (e) { toast(e.message, "error"); loginCooldown = false; }
         setLoading(btn, false);
         setTimeout(() => { loginCooldown = false; }, 5000);
     }
 
     async function handleRegister() {
-        let email = document.getElementById('emailLogin').value.trim();
+        const email = document.getElementById('emailLogin').value.trim();
         if (!email) return toast("Digite um e-mail válido", "error");
-        let cpf = prompt("Digite seu CPF (apenas números):");
+        const cpf = prompt("Digite seu CPF (apenas números):");
         if (!cpf || !/^\d{11}$/.test(cpf.replace(/\D/g,''))) return toast("CPF inválido (11 dígitos)", "error");
-        let pass = document.getElementById('senhaLogin').value;
+        const pass = document.getElementById('senhaLogin').value;
         if (!pass || pass.length < 6) return toast("Senha deve ter no mínimo 6 caracteres", "error");
         if (loginCooldown) return toast("Aguarde alguns segundos", "error");
-        const btn = document.getElementById('registerBtn');
-        setLoading(btn, true);
-        loginCooldown = true;
+        const btn = document.getElementById('registerBtn'); setLoading(btn, true); loginCooldown = true;
         try {
             const usersSnap = await db.collection('perfis').limit(1).get();
             const isFirst = usersSnap.empty;
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
             await db.collection('perfis').doc(cred.user.uid).set({
-                email: email,
-                cpf: cpf.replace(/\D/g,''),
-                credits: isFirst ? 500 : 0,
-                trust: 0,
-                role: isFirst ? 'admin' : 'user',
-                status: 'adimplente',
-                perfil: { nome: email.split('@')[0] },
-                tickets: 0,
-                skillPoints: isFirst ? 10 : 0,
-                plano: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                email, cpf: cpf.replace(/\D/g,''), credits: isFirst ? 500 : 0, trust: 0,
+                role: isFirst ? 'admin' : 'user', status: 'adimplente', perfil: { nome: email.split('@')[0] },
+                tickets: 0, skillPoints: isFirst ? 10 : 0, plano: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             toast("Conta criada! Faça login.", "success");
-        } catch (e) {
-            toast(e.message, "error");
-        }
-        setLoading(btn, false);
-        loginCooldown = false;
+        } catch (e) { toast(e.message, "error"); }
+        setLoading(btn, false); loginCooldown = false;
     }
 
-    window.logout = () => { auth.signOut(); };
+    window.logout = () => auth.signOut();
 
-    // ========== MIGRAÇÃO E CARREGAMENTO DO PERFIL ==========
-    auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged(async user => {
         if (user) {
             document.getElementById('loadingData').style.display = 'flex';
             try {
-                const uidReal = user.uid;
-                const userRef = db.collection('perfis').doc(uidReal);
+                const userRef = db.collection('perfis').doc(user.uid);
                 let docSnap = await userRef.get();
-                
                 if (!docSnap.exists) {
-                    // Tenta migrar dados de documento antigo (ex: com ID diferente)
-                    const email = user.email;
-                    let query = await db.collection('perfis').where('email', '==', email).get();
-                    if (query.empty) {
-                        query = await db.collection('perfis').where('gmail', '==', email).get();
-                    }
-                    if (!query.empty) {
-                        const oldDoc = query.docs[0];
-                        const oldData = oldDoc.data();
-                        await userRef.set({
-                            email: email,
-                            cpf: oldData.cpf || "14393059786",
-                            credits: oldData.credits || 100,
-                            trust: oldData.trust || 0,
-                            role: oldData.role || 'user',
-                            status: oldData.status || 'adimplente',
-                            perfil: oldData.perfil || { nome: "dementos" },
-                            tickets: oldData.tickets || 0,
-                            skillPoints: oldData.skillPoints || 0,
-                            plano: oldData.plano || 0,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        await oldDoc.ref.delete();
-                        toast("Perfil migrado com sucesso!", "success");
-                    } else {
-                        // Cria documento novo padrão
-                        const isFirst = (await db.collection('perfis').limit(1).get()).empty;
-                        await userRef.set({
-                            email: email,
-                            cpf: "14393059786",
-                            credits: isFirst ? 500 : 100,
-                            trust: 0,
-                            role: isFirst ? 'admin' : 'user',
-                            status: 'adimplente',
-                            perfil: { nome: "dementos" },
-                            tickets: 0,
-                            skillPoints: isFirst ? 10 : 0,
-                            plano: 0,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                    docSnap = await userRef.get();
+                    const isFirst = (await db.collection('perfis').limit(1).get()).empty;
+                    await userRef.set({
+                        email: user.email, cpf: "14393059786", credits: isFirst ? 500 : 100, trust: 0,
+                        role: isFirst ? 'admin' : 'user', status: 'adimplente', perfil: { nome: "dementos" },
+                        tickets: 0, skillPoints: isFirst ? 10 : 0, plano: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    docSnap = await userRef.get(); toast("Novo perfil criado!", "success");
                 }
-                
-                userData = { uid: uidReal, ...docSnap.data() };
+                userData = { uid: user.uid, ...docSnap.data() };
                 document.getElementById('loadingData').style.display = 'none';
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
-                renderUI();
-                carregarMuralGlobal();
-                carregarDestinatarios();
-                carregarMeusFeedbacks();
+                renderUI(); carregarMuralGlobal(); carregarDestinatarios(); carregarMeusFeedbacks();
             } catch (err) {
-                console.error(err);
-                toast("Erro ao acessar seus dados. Verifique as regras do Firestore.", "error");
-                document.getElementById('loadingData').style.display = 'none';
-                auth.signOut();
+                console.error(err); toast("Erro ao acessar seus dados. Verifique as regras do Firestore.", "error");
+                document.getElementById('loadingData').style.display = 'none'; auth.signOut();
             }
         } else {
             document.getElementById('loginOverlay').style.display = 'flex';
@@ -508,116 +413,91 @@
         }
     });
 
-    // ========== RENDER PRINCIPAL ==========
     async function renderUI() {
         if (!userData) return;
-        document.getElementById('creditsAmount').innerText = userData.credits || 0;
-        document.getElementById('bigCredits').innerText = userData.credits || 0;
-        document.getElementById('ticketAmount').innerText = userData.tickets || 0;
-        document.getElementById('trustScore').innerText = userData.trust || 0;
-        document.getElementById('skillPointsDisplay').innerText = userData.skillPoints || 0;
-        const planos = ['Associado', 'Bronze', 'Prata', 'Ouro', 'Platina', 'Diamante'];
-        document.getElementById('planBadge').innerText = planos[userData.plano || 0];
+        document.getElementById('creditsAmount').textContent = userData.credits || 0;
+        document.getElementById('bigCredits').textContent = userData.credits || 0;
+        document.getElementById('ticketAmount').textContent = userData.tickets || 0;
+        document.getElementById('trustScore').textContent = userData.trust || 0;
+        document.getElementById('skillPointsDisplay').textContent = userData.skillPoints || 0;
+        const planos = ['Associado','Bronze','Prata','Ouro','Platina','Diamante'];
+        document.getElementById('planBadge').textContent = planos[userData.plano || 0];
         document.getElementById('statusBadge').innerHTML = userData.status === 'adimplente' ? '✅ Adimplente' : '⚠️ Inadimplente';
         document.getElementById('adminBtn').style.display = userData.role === 'admin' ? 'inline-flex' : 'none';
-        if (userData.perfil?.fotoURL) {
-            const preview = document.getElementById('profilePicPreview');
-            if (preview) preview.innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
-        }
+        if (userData.perfil?.fotoURL) document.getElementById('profilePicPreview').innerHTML = `<img src="${userData.perfil.fotoURL}" style="width:100%;height:100%;object-fit:cover;">`;
         document.getElementById('perfilNome').value = userData.perfil?.nome || "";
         document.getElementById('perfilCpf').value = userData.cpf || "";
         document.getElementById('perfilIdade').value = userData.perfil?.idade || "";
         document.getElementById('perfilHabilitado').value = userData.perfil?.habilitado || "sim";
         document.getElementById('perfilMoto').value = userData.perfil?.moto || "";
         document.getElementById('perfilPlaca').value = userData.perfil?.placa || "";
-        
-        carregarMissoes(); carregarRanking(); carregarSorteios(); carregarCheckins(); carregarGaleria(); carregarParceiros(); carregarHabilidades(); carregarConquistas();
+        carregarMissoes(); carregarRanking(); carregarSorteios(); carregarCheckins();
+        carregarGaleria(); carregarParceiros(); carregarHabilidades(); carregarConquistas();
     }
 
-    async function addCredits(amt, xp = 0) {
+    async function addCredits(amt, xp=0) {
         if (!userData.uid) return;
-        await db.collection('perfis').doc(userData.uid).update({
-            credits: firebase.firestore.FieldValue.increment(amt),
-            trust: firebase.firestore.FieldValue.increment(xp)
-        });
-        userData.credits += amt;
-        userData.trust += xp;
-        renderUI();
+        await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(amt), trust: firebase.firestore.FieldValue.increment(xp) });
+        userData.credits += amt; userData.trust += xp; renderUI();
     }
 
     async function salvarPerfil() {
-        let perfil = {
-            nome: document.getElementById('perfilNome').value,
-            idade: parseInt(document.getElementById('perfilIdade').value) || 0,
-            habilitado: document.getElementById('perfilHabilitado').value,
-            moto: document.getElementById('perfilMoto').value,
-            placa: document.getElementById('perfilPlaca').value
-        };
-        let cpf = document.getElementById('perfilCpf').value;
+        const perfil = { nome: document.getElementById('perfilNome').value, idade: parseInt(document.getElementById('perfilIdade').value)||0, habilitado: document.getElementById('perfilHabilitado').value, moto: document.getElementById('perfilMoto').value, placa: document.getElementById('perfilPlaca').value };
+        const cpf = document.getElementById('perfilCpf').value;
         await db.collection('perfis').doc(userData.uid).update({ perfil, cpf });
-        userData.perfil = perfil;
-        userData.cpf = cpf;
-        toast("Perfil salvo", "success");
+        userData.perfil = perfil; userData.cpf = cpf; toast("Perfil salvo", "success");
     }
 
-    document.getElementById('uploadProfileBtn')?.addEventListener('click', () => document.getElementById('profilePicInput').click());
-    document.getElementById('profilePicInput')?.addEventListener('change', async (e) => {
-        let file = e.target.files[0];
-        if (!file) return;
-        const btn = document.getElementById('uploadProfileBtn');
-        setLoading(btn, true);
+    document.getElementById('uploadProfileBtn')?.addEventListener('click', ()=> document.getElementById('profilePicInput').click());
+    document.getElementById('profilePicInput')?.addEventListener('change', async e => {
+        const file = e.target.files[0]; if (!file) return;
+        const btn = document.getElementById('uploadProfileBtn'); setLoading(btn, true);
         try {
             const url = await uploadImageToStorage(file, `profile/${userData.uid}/${Date.now()}.jpg`);
             await db.collection('perfis').doc(userData.uid).update({ 'perfil.fotoURL': url });
-            toast("Foto atualizada!", "success");
-            renderUI();
+            toast("Foto atualizada!", "success"); renderUI();
         } catch (err) { toast("Erro ao enviar foto", "error"); }
         setLoading(btn, false);
     });
 
-    // ========== QR CODE ==========
     const HMAC_KEY = "IRMANDADE_SECRET_KEY_2024";
     async function generateSecureQRData(uid) {
-        const nonce = Date.now().toString() + Math.random().toString(36);
-        const timestamp = Date.now();
-        const expiresAt = timestamp + 5 * 60 * 1000;
+        const nonce = Date.now().toString()+Math.random().toString(36), timestamp = Date.now(), expiresAt = timestamp + 5*60*1000;
         const sign = await hmac(`${uid}:${timestamp}:${nonce}`, HMAC_KEY);
-        return JSON.stringify({ uid, timestamp, nonce, expiresAt, version: '2.0', sign });
+        return JSON.stringify({ uid, timestamp, nonce, expiresAt, version:'2.0', sign });
     }
     async function hmac(msg, key) {
-        const enc = new TextEncoder();
-        const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const enc = new TextEncoder(), k = await crypto.subtle.importKey('raw', enc.encode(key), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
         const sig = await crypto.subtle.sign('HMAC', k, enc.encode(msg));
-        return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+        return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
     }
     async function validateQRData(str) {
         try {
             const data = JSON.parse(str);
-            if (!data.expiresAt || Date.now() > data.expiresAt) return { valid: false, reason: 'QR expirado.' };
+            if (!data.expiresAt || Date.now() > data.expiresAt) return { valid:false, reason:'QR expirado.' };
             const expected = await hmac(`${data.uid}:${data.timestamp}:${data.nonce}`, HMAC_KEY);
-            if (data.sign !== expected) return { valid: false, reason: 'Assinatura inválida.' };
-            const used = await db.collection('usedQrHashes').doc(str.substring(0, 64)).get();
-            if (used.exists) return { valid: false, reason: 'QR já utilizado.' };
-            await db.collection('usedQrHashes').doc(str.substring(0, 64)).set({ usedAt: new Date() });
-            return { valid: true, uid: data.uid };
-        } catch(e) { return { valid: false, reason: 'Formato inválido.' }; }
+            if (data.sign !== expected) return { valid:false, reason:'Assinatura inválida.' };
+            const used = await db.collection('usedQrHashes').doc(str.substring(0,64)).get();
+            if (used.exists) return { valid:false, reason:'QR já utilizado.' };
+            await db.collection('usedQrHashes').doc(str.substring(0,64)).set({ usedAt: new Date() });
+            return { valid:true, uid:data.uid };
+        } catch(e) { return { valid:false, reason:'Formato inválido.' }; }
     }
     window.generateQR = async () => {
-        const qrDiv = document.getElementById('qrContainer');
-        qrDiv.innerHTML = '';
+        const qrDiv = document.getElementById('qrContainer'); qrDiv.innerHTML = '';
         if (!userData.uid) return toast("Faça login primeiro.", "error");
         const qrData = await generateSecureQRData(userData.uid);
-        new QRCode(qrDiv, { text: qrData, width: 180, height: 180, colorDark: '#e06c2e', colorLight: '#ffffff' });
+        new QRCode(qrDiv, { text: qrData, width:180, height:180, colorDark:'#e06c2e', colorLight:'#ffffff' });
         toast("QR gerado! Válido por 5 minutos.", "success");
     };
+
     window.startScanner = () => {
         if (!userData.uid) return toast("Faça login primeiro.", "error");
         document.getElementById('btnStartScanner').style.display = 'none';
         document.getElementById('btnStopScanner').style.display = '';
         html5QrScanner = new Html5Qrcode("reader");
-        html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-            async (text) => { await processScannedQR(text); stopScanner(); },
-            () => {}
+        html5QrScanner.start({ facingMode:"environment" }, { fps:10, qrbox:{ width:250, height:250 } },
+            async (text) => { await processScannedQR(text); stopScanner(); }, () => {}
         ).catch(() => { stopScanner(); toast("Erro na câmera.", "error"); });
     };
     window.stopScanner = () => {
@@ -627,164 +507,282 @@
     };
     async function processScannedQR(text) {
         const result = await validateQRData(text);
-        if (!result.valid) return toast("QR inválido: " + result.reason, "error");
+        if (!result.valid) return toast("QR inválido: "+result.reason, "error");
         if (result.uid === userData.uid) return toast("Você não pode escanear seu próprio QR.", "error");
-        const earned = 50 + Math.floor(Math.random() * 30);
-        await addCredits(earned, Math.floor(earned * 0.4));
+        const earned = 50 + Math.floor(Math.random()*30);
+        await addCredits(earned, Math.floor(earned*0.4));
         toast(`✅ QR validado! +${earned} créditos`, "success");
     }
 
-    // ========== CHECK-IN ==========
     async function realizarCheckin() {
-        let partnerId = document.getElementById('checkinPartnerSelect').value;
-        let fotoFile = document.getElementById('checkinFoto').files[0];
+        const partnerId = document.getElementById('checkinPartnerSelect').value, fotoFile = document.getElementById('checkinFoto').files[0];
         if (!partnerId || !fotoFile) return toast("Selecione parceiro e foto", "error");
-        const btn = document.getElementById('checkinBtn');
-        setLoading(btn, true);
+        const btn = document.getElementById('checkinBtn'); setLoading(btn, true);
         try {
-            let pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+            const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
             const url = await uploadImageToStorage(fotoFile, `checkins/${userData.uid}/${Date.now()}.jpg`);
             const hash = await sha256(url);
-            let exist = await db.collection('checkins').where('hash', '==', hash).get();
-            if (!exist.empty) { toast("Foto duplicada! Fraude", 'error'); setLoading(btn, false); return; }
-            await db.collection('checkins').add({
-                userId: userData.uid, partnerId, imageUrl: url, lat: pos.coords.latitude,
-                lng: pos.coords.longitude, hash, data: new Date()
-            });
-            await addCredits(30, 10);
-            toast("Check-in +30🔥", 'success');
-            carregarCheckins();
+            if (!(await db.collection('checkins').where('hash','==',hash).get()).empty) { toast("Foto duplicada!", "error"); setLoading(btn,false); return; }
+            await db.collection('checkins').add({ userId:userData.uid, partnerId, imageUrl:url, lat:pos.coords.latitude, lng:pos.coords.longitude, hash, data:new Date() });
+            await addCredits(30, 10); toast("Check-in +30🔥", "success"); carregarCheckins();
             document.getElementById('checkinFoto').value = '';
         } catch (err) { toast("Erro ao salvar check-in", "error"); }
         setLoading(btn, false);
     }
 
     async function carregarCheckins() {
-        let snap = await db.collection('checkins').where('userId', '==', userData.uid).orderBy('data', 'desc').limit(20).get();
-        let lista = snap.docs.map(d => d.data());
-        document.getElementById('meusCheckinsList').innerHTML = lista.map(c => `<div class="card"><img src="${c.imageUrl}" style="width:100%;max-height:150px;object-fit:cover;border-radius:12px;"><div>${new Date(c.data.toDate()).toLocaleString()}</div></div>`).join('');
+        const snap = await db.collection('checkins').where('userId','==',userData.uid).orderBy('data','desc').limit(20).get();
+        document.getElementById('meusCheckinsList').innerHTML = snap.docs.map(d => d.data()).map(c =>
+            `<div class="card"><img src="${c.imageUrl}" style="width:100%;max-height:150px;object-fit:cover;border-radius:12px;"><div>${new Date(c.data.toDate()).toLocaleString()}</div></div>`).join('');
     }
 
-    // ========== NOTA FISCAL ==========
     async function enviarNF() {
-        let valor = parseFloat(document.getElementById('valorNF').value);
-        let fotoFile = document.getElementById('nfFoto').files[0];
+        const valor = parseFloat(document.getElementById('valorNF').value), fotoFile = document.getElementById('nfFoto').files[0];
         if (!valor || !fotoFile) return toast("Preencha valor e foto", "error");
-        const btn = document.getElementById('nfBtn');
-        setLoading(btn, true);
+        const btn = document.getElementById('nfBtn'); setLoading(btn, true);
         try {
             const url = await uploadImageToStorage(fotoFile, `notas/${userData.uid}/${Date.now()}.jpg`);
             const hash = await sha256(url);
-            let exist = await db.collection('notas').where('hash', '==', hash).get();
-            if (!exist.empty) { toast("Nota já utilizada!", 'error'); setLoading(btn, false); return; }
-            let cred = Math.floor(valor * 10);
-            await db.collection('notas').add({ userId: userData.uid, valor, imageUrl: url, hash, data: new Date() });
-            await addCredits(cred, cred * 0.3);
-            toast(`Nota válida! +${cred}🔥`, 'success');
-            document.getElementById('nfFoto').value = '';
-            document.getElementById('valorNF').value = '';
+            if (!(await db.collection('notas').where('hash','==',hash).get()).empty) { toast("Nota já utilizada!", "error"); setLoading(btn,false); return; }
+            const cred = Math.floor(valor*10);
+            await db.collection('notas').add({ userId:userData.uid, valor, imageUrl:url, hash, data:new Date() });
+            await addCredits(cred, cred*0.3); toast(`Nota válida! +${cred}🔥`, "success");
+            document.getElementById('nfFoto').value = ''; document.getElementById('valorNF').value = '';
         } catch (err) { toast("Erro ao enviar nota", "error"); }
         setLoading(btn, false);
     }
 
-    // ========== PARCEIROS ==========
     async function carregarParceiros() {
-        let snap = await db.collection('partners').get();
-        let partners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        let html = partners.map(p => `<div class="card"><strong>${p.name}</strong> - ${p.category}<br>💰 ${p.price || 10}🔥<button class="btn btn-primary btn-sm" onclick="pagarParceiro('${p.id}',${p.price || 10})">Pagar</button></div>`).join('');
-        document.getElementById('partnersList').innerHTML = html;
-        let select = document.getElementById('checkinPartnerSelect');
-        if (select) select.innerHTML = partners.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        const snap = await db.collection('partners').get();
+        const partners = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+        document.getElementById('partnersList').innerHTML = partners.map(p =>
+            `<div class="card"><strong>${p.name}</strong> - ${p.category}<br>💰 ${p.price||10}🔥<button class="btn btn-primary btn-sm" onclick="pagarParceiro('${p.id}',${p.price||10})">Pagar</button></div>`).join('');
+        const sel = document.getElementById('checkinPartnerSelect');
+        if (sel) sel.innerHTML = partners.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     }
     window.pagarParceiro = async (id, custo) => {
-        if ((userData.credits || 0) < custo) return toast("Saldo insuficiente", "error");
+        if ((userData.credits||0) < custo) return toast("Saldo insuficiente", "error");
         await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-custo) });
-        userData.credits -= custo;
-        renderUI();
-        toast(`Pagamento de ${custo} tokens realizado!`, "success");
+        userData.credits -= custo; renderUI(); toast(`Pagamento de ${custo} tokens realizado!`, "success");
     };
 
-    // ========== MISSÕES ==========
-    let missions = [{ id: 'm1', title: 'Visitar Parceiro', reward: 40 }, { id: 'm2', title: 'Nota Fiscal', reward: 30 }, { id: 'm3', title: 'Check-in', reward: 25 }];
-    function carregarMissoes() { document.getElementById('missionsList').innerHTML = missions.map(m => `<div class="card"><div>${m.title}</div><div>+${m.reward}🔥</div><button class="btn btn-primary btn-sm" onclick="cumprirMissao('${m.id}')">Cumprir</button></div>`).join(''); }
-    window.cumprirMissao = async (id) => { let m = missions.find(i => i.id === id); if (m) { await addCredits(m.reward, m.reward * 0.3); toast(`Missão ${m.title} concluída!`, "success"); } };
+    function carregarMissoes() {
+        document.getElementById('missionsList').innerHTML = missions.map(m =>
+            `<div class="card"><div>${m.title}</div><div>+${m.reward}🔥</div><button class="btn btn-primary btn-sm" onclick="cumprirMissao('${m.id}')">Cumprir</button></div>`).join('');
+    }
+    window.cumprirMissao = async (id) => {
+        const m = missions.find(i=>i.id===id);
+        if (m) { await addCredits(m.reward, m.reward*0.3); toast(`Missão ${m.title} concluída!`, "success"); }
+    };
 
-    // ========== RANKING ==========
-    async function carregarRanking() { let snap = await db.collection('perfis').orderBy('trust', 'desc').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('rankingList').innerHTML = lista.map((u, i) => `<div>${i+1}. ${u.perfil?.nome || u.cpf} - 🔥${u.credits || 0}</div>`).join(''); }
+    async function carregarRanking() {
+        const snap = await db.collection('perfis').orderBy('trust','desc').limit(30).get();
+        document.getElementById('rankingList').innerHTML = snap.docs.map((d,i) => ({ id:d.id, ...d.data() })).map((u,i) =>
+            `<div>${i+1}. ${u.perfil?.nome||u.cpf} - 🔥${u.credits||0}</div>`).join('');
+    }
 
-    // ========== SORTEIOS ==========
-    async function comprarTicket() { if ((userData.credits||0) < 50) return toast("Tokens insuficientes", "error"); await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-50), tickets: firebase.firestore.FieldValue.increment(1) }); userData.credits -= 50; userData.tickets = (userData.tickets||0)+1; renderUI(); toast("Ingresso comprado!", "success"); }
-    async function carregarSorteios() { let snap = await db.collection('sorteios').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('sorteiosList').innerHTML = lista.map(s => `<div>🎲 ${s.nome} - Prêmio: ${s.premio}</div>`).join('') || '<p>Nenhum sorteio ativo</p>'; document.getElementById('meusTickets').innerHTML = `🎟️ Seus ingressos: ${userData.tickets || 0}`; }
+    async function comprarTicket() {
+        if ((userData.credits||0) < 50) return toast("Tokens insuficientes", "error");
+        await db.collection('perfis').doc(userData.uid).update({ credits: firebase.firestore.FieldValue.increment(-50), tickets: firebase.firestore.FieldValue.increment(1) });
+        userData.credits -= 50; userData.tickets = (userData.tickets||0)+1; renderUI(); toast("Ingresso comprado!", "success");
+    }
+    async function carregarSorteios() {
+        const snap = await db.collection('sorteios').get();
+        document.getElementById('sorteiosList').innerHTML = snap.docs.map(d=>d.data()).map(s=>`<div>🎲 ${s.nome} - Prêmio: ${s.premio}</div>`).join('')||'<p>Nenhum sorteio ativo</p>';
+        document.getElementById('meusTickets').innerHTML = `🎟️ Seus ingressos: ${userData.tickets||0}`;
+    }
 
-    // ========== GALERIA ==========
-    async function carregarGaleria() { let snap = await db.collection('galeria').orderBy('data', 'desc').limit(30).get(); let fotos = snap.docs.map(d => d.data()); document.getElementById('galleryContainer').innerHTML = fotos.map(f => `<div class="gallery-item"><img src="${f.imageUrl}"></div>`).join(''); }
-    document.getElementById('addGalleryBtn')?.addEventListener('click', () => { let input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = async (e) => { let file = e.target.files[0]; if (!file) return; const url = await uploadImageToStorage(file, `galeria/${userData.uid}/${Date.now()}.jpg`); await db.collection('galeria').add({ userId: userData.uid, imageUrl: url, data: new Date() }); carregarGaleria(); toast("Foto adicionada!", "success"); }; input.click(); });
+    async function carregarGaleria() {
+        const snap = await db.collection('galeria').orderBy('data','desc').limit(30).get();
+        document.getElementById('galleryContainer').innerHTML = snap.docs.map(d=>d.data()).map(f=>`<div class="gallery-item"><img src="${f.imageUrl}"></div>`).join('');
+    }
+    document.getElementById('addGalleryBtn')?.addEventListener('click', () => {
+        const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*';
+        inp.onchange = async e => {
+            const file = e.target.files[0]; if (!file) return;
+            const url = await uploadImageToStorage(file, `galeria/${userData.uid}/${Date.now()}.jpg`);
+            await db.collection('galeria').add({ userId:userData.uid, imageUrl:url, data:new Date() });
+            carregarGaleria(); toast("Foto adicionada!", "success");
+        };
+        inp.click();
+    });
 
-    // ========== HABILIDADES ==========
-    async function carregarHabilidades() { let snap = await db.collection('skills').get(); if (snap.empty) { await db.collection('skills').doc('skill1').set({ id: 'skill1', name: 'Visão de Águia', desc: '+10% scans', cost: 2 }); snap = await db.collection('skills').get(); } allSkills = snap.docs.map(d => d.data()); let userSkills = userData.habilidades || []; document.getElementById('skillsTree').innerHTML = allSkills.map(s => `<div class="skill-card ${userSkills.includes(s.id)?'unlocked':''}" onclick="comprarHabilidade('${s.id}')"><strong>${s.name}</strong><br>${s.desc}<br>Custo: ${s.cost} pts</div>`).join(''); }
-    window.comprarHabilidade = async (id) => { let skill = allSkills.find(s => s.id === id); if (!skill) return; if ((userData.skillPoints||0) < skill.cost) return toast("Pontos insuficientes", "error"); if ((userData.habilidades||[]).includes(id)) return toast("Já possui", "error"); await db.collection('perfis').doc(userData.uid).update({ habilidades: firebase.firestore.FieldValue.arrayUnion(id), skillPoints: firebase.firestore.FieldValue.increment(-skill.cost) }); userData.skillPoints -= skill.cost; userData.habilidades = [...(userData.habilidades||[]), id]; toast(`Habilidade ${skill.name} adquirida!`, "success"); carregarHabilidades(); };
+    async function carregarHabilidades() {
+        let snap = await db.collection('skills').get();
+        if (snap.empty) { await db.collection('skills').doc('skill1').set({ id:'skill1', name:'Visão de Águia', desc:'+10% scans', cost:2 }); snap = await db.collection('skills').get(); }
+        allSkills = snap.docs.map(d => d.data());
+        const userSkills = userData.habilidades || [];
+        document.getElementById('skillsTree').innerHTML = allSkills.map(s =>
+            `<div class="skill-card ${userSkills.includes(s.id)?'unlocked':''}" onclick="comprarHabilidade('${s.id}')"><strong>${s.name}</strong><br>${s.desc}<br>Custo: ${s.cost} pts</div>`).join('');
+    }
+    window.comprarHabilidade = async (id) => {
+        const skill = allSkills.find(s => s.id===id);
+        if (!skill) return;
+        if ((userData.skillPoints||0) < skill.cost) return toast("Pontos insuficientes", "error");
+        if ((userData.habilidades||[]).includes(id)) return toast("Já possui", "error");
+        await db.collection('perfis').doc(userData.uid).update({ habilidades: firebase.firestore.FieldValue.arrayUnion(id), skillPoints: firebase.firestore.FieldValue.increment(-skill.cost) });
+        userData.skillPoints -= skill.cost; userData.habilidades = [...(userData.habilidades||[]), id];
+        toast(`Habilidade ${skill.name} adquirida!`, "success"); carregarHabilidades();
+    };
 
-    // ========== CONQUISTAS ==========
-    async function carregarConquistas() { let snap = await db.collection('achievements').get(); if (snap.empty) { await db.collection('achievements').doc('ach1').set({ id: 'ach1', name: 'Primeiro Scan', desc: 'Escanear 1 QR' }); snap = await db.collection('achievements').get(); } allAchievements = snap.docs.map(d => d.data()); let userAch = userData.conquistas || []; document.getElementById('achievementsList').innerHTML = allAchievements.map(a => `<span class="badge-medal">${a.name} ${userAch.includes(a.id)?'🏅':'🔒'}</span>`).join(''); }
+    async function carregarConquistas() {
+        let snap = await db.collection('achievements').get();
+        if (snap.empty) { await db.collection('achievements').doc('ach1').set({ id:'ach1', name:'Primeiro Scan', desc:'Escanear 1 QR' }); snap = await db.collection('achievements').get(); }
+        allAchievements = snap.docs.map(d => d.data());
+        const userAch = userData.conquistas || [];
+        document.getElementById('achievementsList').innerHTML = allAchievements.map(a =>
+            `<span class="badge-medal">${a.name} ${userAch.includes(a.id)?'🏅':'🔒'}</span>`).join('');
+    }
 
-    // ========== CHAT GLOBAL ==========
-    function getTempoGlobal() { let p = userData.plano || 0; if (p >= 5) return 120000; if (p >= 4) return 45000; return null; }
-    window.enviarMensagemGlobal = async () => { let tempo = getTempoGlobal(); if (!tempo) return toast("Seu plano não pode postar no mural", "error"); let msg = document.getElementById('msgGlobal').value; if (!msg.trim()) return; await db.collection('globalChat').add({ uid: userData.uid, nome: userData.perfil?.nome || userData.cpf, texto: msg, expira: Date.now() + tempo, data: new Date() }); document.getElementById('msgGlobal').value = ''; };
-    function carregarMuralGlobal() { db.collection('globalChat').where('expira', '>', Date.now()).orderBy('data', 'desc').onSnapshot(snap => { let msgs = snap.docs.map(d => d.data()); document.getElementById('globalMural').innerHTML = msgs.map(m => `<div class="mural-item"><strong>${m.nome}</strong>: ${m.texto}</div>`).join(''); }); }
+    function getTempoGlobal() { const p = userData.plano||0; if (p>=5) return 120000; if (p>=4) return 45000; return null; }
+    window.enviarMensagemGlobal = async () => {
+        const tempo = getTempoGlobal();
+        if (!tempo) return toast("Seu plano não pode postar no mural", "error");
+        const msg = document.getElementById('msgGlobal').value;
+        if (!msg.trim()) return;
+        await db.collection('globalChat').add({ uid:userData.uid, nome:userData.perfil?.nome||userData.cpf, texto:msg, expira:Date.now()+tempo, data:new Date() });
+        document.getElementById('msgGlobal').value = '';
+    };
+    function carregarMuralGlobal() {
+        db.collection('globalChat').where('expira','>',Date.now()).orderBy('data','desc').onSnapshot(snap => {
+            document.getElementById('globalMural').innerHTML = snap.docs.map(d => d.data()).map(m => `<div class="mural-item"><strong>${m.nome}</strong>: ${m.texto}</div>`).join('');
+        });
+    }
 
-    // ========== CHAT PRIVADO ==========
-    async function derivarChave(u1, u2) { let seed = u1 < u2 ? u1+u2 : u2+u1; return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seed)); }
-    async function criptografar(texto, chave) { let iv = crypto.getRandomValues(new Uint8Array(12)); let enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chave, new TextEncoder().encode(texto)); return { ciphertext: Array.from(new Uint8Array(enc)), iv: Array.from(iv) }; }
-    async function descriptografar(obj, chave) { let dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(obj.iv) }, chave, new Uint8Array(obj.ciphertext)); return new TextDecoder().decode(dec); }
-    window.enviarMensagemPrivada = async () => { let dest = document.getElementById('destinatarioSelect').value; if (!dest) return; let msg = document.getElementById('msgPrivada').value; if (!msg.trim()) return; let chave = await derivarChave(userData.uid, dest); let encrypted = await criptografar(msg, chave); await db.collection('privateChat').add({ from: userData.uid, to: dest, encrypted, timestamp: Date.now() }); document.getElementById('msgPrivada').value = ''; };
-    async function carregarChatPrivado(dest) { if (privateListener) privateListener(); privateListener = db.collection('privateChat').where('from', 'in', [[userData.uid, dest], [dest, userData.uid]]).orderBy('timestamp').onSnapshot(async snap => { let chave = await derivarChave(userData.uid, dest); let msgs = []; for (let doc of snap.docs) { let d = doc.data(); try { let texto = await descriptografar(d.encrypted, chave); msgs.push({ from: d.from, texto, timestamp: d.timestamp }); } catch (e) {} } document.getElementById('privateChatArea').innerHTML = msgs.map(m => `<div class="chat-message ${m.from===userData.uid?'self':''}"><strong>${m.from===userData.uid?'Você':dest}</strong>: ${m.texto}<br><small>${new Date(m.timestamp).toLocaleTimeString()}</small></div>`).join(''); }); }
-    async function carregarDestinatarios() { let snap = await db.collection('perfis').get(); let membros = snap.docs.filter(d => d.id !== userData.uid).map(d => ({ id: d.id, nome: d.data().perfil?.nome || d.data().cpf })); let sel = document.getElementById('destinatarioSelect'); if (sel) sel.innerHTML = membros.map(m => `<option value="${m.id}">${m.nome}</option>`).join(''); if (membros.length) carregarChatPrivado(membros[0].id); }
+    async function derivarChave(u1,u2) { const seed = u1<u2?u1+u2:u2+u1; return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seed)); }
+    async function criptografar(texto, chave) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const enc = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, chave, new TextEncoder().encode(texto));
+        return { ciphertext: Array.from(new Uint8Array(enc)), iv: Array.from(iv) };
+    }
+    async function descriptografar(obj, chave) {
+        const dec = await crypto.subtle.decrypt({ name:'AES-GCM', iv: new Uint8Array(obj.iv) }, chave, new Uint8Array(obj.ciphertext));
+        return new TextDecoder().decode(dec);
+    }
+    window.enviarMensagemPrivada = async () => {
+        const dest = document.getElementById('destinatarioSelect').value;
+        if (!dest) return;
+        const msg = document.getElementById('msgPrivada').value;
+        if (!msg.trim()) return;
+        const chave = await derivarChave(userData.uid, dest);
+        const encrypted = await criptografar(msg, chave);
+        await db.collection('privateChat').add({ from:userData.uid, to:dest, encrypted, timestamp:Date.now() });
+        document.getElementById('msgPrivada').value = '';
+    };
+    async function carregarChatPrivado(dest) {
+        if (privateListener) privateListener();
+        privateListener = db.collection('privateChat').where('from','in',[[userData.uid, dest],[dest, userData.uid]]).orderBy('timestamp').onSnapshot(async snap => {
+            const chave = await derivarChave(userData.uid, dest);
+            const msgs = [];
+            for (const doc of snap.docs) {
+                const d = doc.data();
+                try { const texto = await descriptografar(d.encrypted, chave); msgs.push({ from:d.from, texto, timestamp:d.timestamp }); } catch(e){}
+            }
+            document.getElementById('privateChatArea').innerHTML = msgs.map(m => `<div class="chat-message ${m.from===userData.uid?'self':''}"><strong>${m.from===userData.uid?'Você':dest}</strong>: ${m.texto}<br><small>${new Date(m.timestamp).toLocaleTimeString()}</small></div>`).join('');
+        });
+    }
+    async function carregarDestinatarios() {
+        const snap = await db.collection('perfis').get();
+        const membros = snap.docs.filter(d => d.id !== userData.uid).map(d => ({ id:d.id, nome:d.data().perfil?.nome||d.data().cpf }));
+        const sel = document.getElementById('destinatarioSelect');
+        if (sel) { sel.innerHTML = membros.map(m => `<option value="${m.id}">${m.nome}</option>`).join(''); if (membros.length) carregarChatPrivado(membros[0].id); }
+    }
 
-    // ========== BRINDES ==========
-    window.trocarIngressoPorKit = async () => { if ((userData.tickets||0) < 1) return toast("Sem ingressos", "error"); await db.collection('perfis').doc(userData.uid).update({ tickets: firebase.firestore.FieldValue.increment(-1) }); userData.tickets--; renderUI(); toast("Kit alimentos solicitado!", "success"); };
+    window.trocarIngressoPorKit = async () => {
+        if ((userData.tickets||0) < 1) return toast("Sem ingressos", "error");
+        await db.collection('perfis').doc(userData.uid).update({ tickets: firebase.firestore.FieldValue.increment(-1) });
+        userData.tickets--; renderUI(); toast("Kit alimentos solicitado!", "success");
+    };
 
-    // ========== FEEDBACK ==========
-    window.enviarFeedback = async () => { let msg = document.getElementById('feedbackMsg').value; if (!msg.trim()) return; await db.collection('feedbacks').add({ userId: userData.uid, nome: userData.perfil?.nome || userData.cpf, mensagem: msg, data: new Date() }); toast("Feedback enviado", "success"); document.getElementById('feedbackMsg').value = ''; carregarMeusFeedbacks(); };
-    async function carregarMeusFeedbacks() { let snap = await db.collection('feedbacks').where('userId', '==', userData.uid).orderBy('data', 'desc').get(); let lista = snap.docs.map(d => d.data()); document.getElementById('meusFeedbacks').innerHTML = lista.map(f => `<div class="chat-message">${new Date(f.data.toDate()).toLocaleString()}<br>${f.mensagem}</div>`).join(''); }
+    window.enviarFeedback = async () => {
+        const msg = document.getElementById('feedbackMsg').value;
+        if (!msg.trim()) return;
+        await db.collection('feedbacks').add({ userId:userData.uid, nome:userData.perfil?.nome||userData.cpf, mensagem:msg, data:new Date() });
+        toast("Feedback enviado", "success"); document.getElementById('feedbackMsg').value = ''; carregarMeusFeedbacks();
+    };
+    async function carregarMeusFeedbacks() {
+        const snap = await db.collection('feedbacks').where('userId','==',userData.uid).orderBy('data','desc').get();
+        document.getElementById('meusFeedbacks').innerHTML = snap.docs.map(d=>d.data()).map(f => `<div class="chat-message">${new Date(f.data.toDate()).toLocaleString()}<br>${f.mensagem}</div>`).join('');
+    }
 
-    // ========== ADMIN ==========
-    window.listarMembros = async () => { let snap = await db.collection('perfis').limit(30).get(); let lista = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('adminList').innerHTML = lista.map(m => `<div>📧 ${m.email} (CPF: ${m.cpf}) - 🔥${m.credits || 0} <button onclick="darCreditos('${m.id}', 100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}', -100)">-100</button></div>`).join(''); };
-    window.darCreditos = async (uid, amount) => { await db.collection('perfis').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) }); toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros(); };
-    window.adminGerenciarHabilidades = () => { document.getElementById('habilidadesAdminArea').innerHTML = `<input id="skillName" placeholder="Nome"><input id="skillCost" placeholder="Custo"><button onclick="criarHabilidade()">Criar</button><div id="listaSkillsAdmin"></div>`; };
-    window.mintCreditsComValidacao = async () => { let email = prompt("E-mail do usuário:"); let amt = parseInt(prompt("Tokens (máx 1000):")); if (amt > 1000) return toast("Máx 1000"); let q = await db.collection('perfis').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(amt) }); toast(`+${amt} tokens para ${email}`, "success"); };
-    window.configurarRecompensas = () => toast("Função em desenvolvimento");
-    window.definirTaxaCambio = () => { let nova = parseFloat(prompt("Nova taxa (1 token = ?)")); if (!isNaN(nova)) exchangeRate = nova; toast(`Taxa alterada para ${nova}`); };
-    window.verRelatorioFinanceiro = () => { document.getElementById('relatorioFinanceiro').innerHTML = `<div class="card">Reserva: ${reserva} tokens | Circulação: ${totalTokens}</div>`; };
-    window.verAdminLogs = async () => { let snap = await db.collection('admin_logs').orderBy('timestamp', 'desc').limit(50).get(); let logs = snap.docs.map(d => d.data()); document.getElementById('adminLogsArea').innerHTML = `<h4>Últimas ações</h4>${logs.map(l => `<div class="admin-log">${l.action} - ${JSON.stringify(l.details)} - ${l.timestamp?.toDate().toLocaleString()}</div>`).join('')}`; };
-    window.adminGerenciarConquistas = () => { document.getElementById('conquistasAdminArea').innerHTML = `<input id="achName" placeholder="Nome"><button onclick="criarConquista()">Criar</button><div id="listaConquistasAdmin"></div>`; };
-    window.adminGerenciarEventos = () => { document.getElementById('eventosArea').innerHTML = `<input id="eventName" placeholder="Nome"><input id="eventMult" placeholder="Multiplicador"><input type="datetime-local" id="eventEnd"><button onclick="criarEvento()">Criar</button><div id="listaEventos"></div>`; };
-    window.adminDefinirClasse = async () => { let email = prompt("E-mail do usuário:"); let classe = prompt("Nova classe:"); if (email && classe) { let q = await db.collection('perfis').where('email', '==', email).get(); if (!q.empty) await q.docs[0].ref.update({ classe }); toast(`Classe alterada para ${classe}`); } };
-    window.gerenciarParceiros = () => { document.getElementById('parceirosAdminArea').innerHTML = `<input id="parNome" placeholder="Nome"><input id="parCat" placeholder="Categoria"><input id="parPrice" placeholder="Preço"><button onclick="criarParceiroAdmin()">Criar</button><div id="listaParceirosAdmin"></div>`; };
-    window.criarHabilidade = async () => { let name = document.getElementById('skillName').value, cost = parseInt(document.getElementById('skillCost').value); let id = Date.now().toString(); await db.collection('skills').doc(id).set({ id, name, desc: "Personalizada", cost }); toast("Habilidade criada"); adminGerenciarHabilidades(); };
-    window.criarConquista = async () => { let name = document.getElementById('achName').value; let id = Date.now().toString(); await db.collection('achievements').doc(id).set({ id, name, desc: "Nova conquista" }); toast("Conquista criada"); adminGerenciarConquistas(); };
-    window.criarEvento = async () => { let name = document.getElementById('eventName').value, mult = parseFloat(document.getElementById('eventMult').value), end = new Date(document.getElementById('eventEnd').value).getTime(); let id = Date.now().toString(); await db.collection('events').doc(id).set({ id, name, multiplier: mult, endDate: end }); toast("Evento criado"); adminGerenciarEventos(); };
-    window.criarParceiroAdmin = async () => { let name = document.getElementById('parNome').value, cat = document.getElementById('parCat').value, price = parseInt(document.getElementById('parPrice').value); let id = Date.now().toString(); await db.collection('partners').doc(id).set({ id, name, category: cat, price }); toast("Parceiro criado"); gerenciarParceiros(); };
+    // ADMIN
+    window.listarMembros = async () => {
+        const snap = await db.collection('perfis').limit(30).get();
+        document.getElementById('adminList').innerHTML = snap.docs.map(d=>({id:d.id,...d.data()})).map(m => `<div>📧 ${m.email} (CPF:${m.cpf}) - 🔥${m.credits||0} <button onclick="darCreditos('${m.id}',100)">+100</button> <button class="btn-danger" onclick="darCreditos('${m.id}',-100)">-100</button></div>`).join('');
+    };
+    window.darCreditos = async (uid, amount) => {
+        await db.collection('perfis').doc(uid).update({ credits: firebase.firestore.FieldValue.increment(amount) });
+        toast(`${amount>0?'Adicionado':'Removido'} ${Math.abs(amount)} tokens`, "success"); listarMembros();
+    };
+    window.adminGerenciarHabilidades = () => {
+        document.getElementById('habilidadesAdminArea').innerHTML = `<input id="skillName" placeholder="Nome"><input id="skillCost" placeholder="Custo"><button onclick="criarHabilidade()">Criar</button><div id="listaSkillsAdmin"></div>`;
+        carregarHabilidadesAdmin();
+    };
+    async function carregarHabilidadesAdmin() { const snap = await db.collection('skills').get(); document.getElementById('listaSkillsAdmin').innerHTML = snap.docs.map(d=>d.data()).map(s=>`<div>${s.name} (${s.cost}pts) <button onclick="removerHabilidade('${s.id}')">🗑️</button></div>`).join(''); }
+    window.criarHabilidade = async () => {
+        const name = document.getElementById('skillName').value, cost = parseInt(document.getElementById('skillCost').value);
+        const id = Date.now().toString(); await db.collection('skills').doc(id).set({ id, name, desc:"Personalizada", cost }); adminGerenciarHabilidades();
+    };
+    window.removerHabilidade = async (id) => { await db.collection('skills').doc(id).delete(); adminGerenciarHabilidades(); };
+    window.adminGerenciarConquistas = () => {
+        document.getElementById('conquistasAdminArea').innerHTML = `<input id="achName" placeholder="Nome"><button onclick="criarConquista()">Criar</button><div id="listaConquistasAdmin"></div>`;
+        carregarConquistasAdmin();
+    };
+    async function carregarConquistasAdmin() { const snap = await db.collection('achievements').get(); document.getElementById('listaConquistasAdmin').innerHTML = snap.docs.map(d=>d.data()).map(a=>`<div>${a.name} <button onclick="removerConquista('${a.id}')">🗑️</button></div>`).join(''); }
+    window.criarConquista = async () => { const name = document.getElementById('achName').value, id = Date.now().toString(); await db.collection('achievements').doc(id).set({ id, name, desc:"Nova conquista" }); adminGerenciarConquistas(); };
+    window.removerConquista = async (id) => { await db.collection('achievements').doc(id).delete(); adminGerenciarConquistas(); };
+    window.adminGerenciarEventos = () => {
+        document.getElementById('eventosArea').innerHTML = `<input id="eventName" placeholder="Nome"><input id="eventMult" placeholder="Multiplicador"><input type="datetime-local" id="eventEnd"><button onclick="criarEvento()">Criar</button><div id="listaEventos"></div>`;
+        carregarEventos();
+    };
+    async function carregarEventos() { const snap = await db.collection('events').get(); document.getElementById('listaEventos').innerHTML = snap.docs.map(d=>d.data()).map(e=>`<div>🎉 ${e.name} (x${e.multiplier}) até ${new Date(e.endDate).toLocaleString()}</div>`).join(''); }
+    window.criarEvento = async () => {
+        const name = document.getElementById('eventName').value, mult = parseFloat(document.getElementById('eventMult').value), end = new Date(document.getElementById('eventEnd').value).getTime();
+        const id = Date.now().toString(); await db.collection('events').doc(id).set({ id, name, multiplier: mult, endDate: end }); adminGerenciarEventos();
+    };
+    window.gerenciarParceiros = () => {
+        document.getElementById('parceirosAdminArea').innerHTML = `<input id="parNome" placeholder="Nome"><input id="parCat" placeholder="Categoria"><input id="parPrice" placeholder="Preço"><button onclick="criarParceiroAdmin()">Criar</button><div id="listaParceirosAdmin"></div>`;
+        carregarParceirosAdmin();
+    };
+    async function carregarParceirosAdmin() { const snap = await db.collection('partners').get(); document.getElementById('listaParceirosAdmin').innerHTML = snap.docs.map(d=>d.data()).map(p=>`<div>${p.name} (${p.price}💰) <button onclick="removerParceiroAdmin('${p.id}')">🗑️</button></div>`).join(''); }
+    window.criarParceiroAdmin = async () => {
+        const name = document.getElementById('parNome').value, cat = document.getElementById('parCat').value, price = parseInt(document.getElementById('parPrice').value);
+        const id = Date.now().toString(); await db.collection('partners').doc(id).set({ id, name, category: cat, price }); gerenciarParceiros();
+    };
+    window.removerParceiroAdmin = async (id) => { await db.collection('partners').doc(id).delete(); gerenciarParceiros(); };
+    window.adminDefinirClasse = async () => {
+        const email = prompt("E-mail do usuário:"), classe = prompt("Nova classe:");
+        if (email && classe) { const q = await db.collection('perfis').where('email','==',email).get(); if (!q.empty) await q.docs[0].ref.update({ classe }); toast(`Classe alterada para ${classe}`); }
+    };
+    window.mintCreditsComValidacao = async () => {
+        const email = prompt("E-mail:"), amt = parseInt(prompt("Tokens (máx 1000):"));
+        if (amt > 1000) return toast("Máx 1000"); const q = await db.collection('perfis').where('email','==',email).get();
+        if (!q.empty) await q.docs[0].ref.update({ credits: firebase.firestore.FieldValue.increment(amt) }); toast(`+${amt} tokens para ${email}`, "success");
+    };
+    window.configurarRecompensas = () => toast("Em desenvolvimento");
+    window.definirTaxaCambio = () => { const nova = parseFloat(prompt("Nova taxa (1 token = ?)")); if (!isNaN(nova)) window.exchangeRate = nova; toast(`Taxa: ${nova}`); };
+    window.verRelatorioFinanceiro = () => { document.getElementById('relatorioFinanceiro').innerHTML = `<div class="card">Reserva: ${window.reserva||10000} tokens | Circulação: ${window.totalTokens||0}</div>`; };
+    window.verAdminLogs = async () => {
+        const snap = await db.collection('admin_logs').orderBy('timestamp','desc').limit(50).get();
+        document.getElementById('adminLogsArea').innerHTML = `<h4>Últimas ações</h4>${snap.docs.map(d=>d.data()).map(l=>`<div class="admin-log">${l.action} - ${JSON.stringify(l.details)} - ${l.timestamp?.toDate().toLocaleString()}</div>`).join('')}`;
+    };
 
-    // ========== NAVEGAÇÃO ==========
     function navigateTo(view) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        const viewId = `view${view.charAt(0).toUpperCase() + view.slice(1)}`;
-        const el = document.getElementById(viewId);
+        const el = document.getElementById('view'+view.charAt(0).toUpperCase()+view.slice(1));
         if (el) el.classList.add('active');
         document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-        let btn = document.querySelector(`.nav-item[data-view="${view}"]`);
+        const btn = document.querySelector(`.nav-item[data-view="${view}"]`);
         if (btn) btn.classList.add('active');
-        if (view === 'admin' && userData.role === 'admin') listarMembros();
-        if (view === 'chatPrivado') carregarDestinatarios();
-        if (view === 'scanner') stopScanner();
+        if (view==='admin' && userData.role==='admin') listarMembros();
+        if (view==='chatPrivado') carregarDestinatarios();
+        if (view==='scanner') stopScanner();
     }
     window.navigateTo = navigateTo;
 
-    // ========== TEMAS ==========
     window.mudarCorTema = (cor) => { document.documentElement.style.setProperty('--ember', cor); document.documentElement.style.setProperty('--ember-bright', cor); };
-    window.toggleDark = () => { document.body.style.background = document.body.style.background === '#050302' ? '#1a120c' : '#050302'; };
+    window.toggleDark = () => { document.body.style.background = document.body.style.background==='#050302'?'#1a120c':'#050302'; };
 
-    // ========== EVENT LISTENERS ==========
     document.getElementById('loginBtn').onclick = handleLogin;
     document.getElementById('registerBtn').onclick = handleRegister;
     document.getElementById('checkinBtn').onclick = realizarCheckin;
@@ -794,38 +792,20 @@
     document.getElementById('feedbackBtn').onclick = enviarFeedback;
     document.getElementById('btnStartScanner').onclick = startScanner;
     document.getElementById('btnStopScanner').onclick = stopScanner;
-    document.getElementById('forgotPasswordBtn').onclick = () => document.getElementById('recoveryModal').style.display = 'flex';
-    document.getElementById('closeRecoveryModal').onclick = () => document.getElementById('recoveryModal').style.display = 'none';
+    document.getElementById('forgotPasswordBtn').onclick = ()=> document.getElementById('recoveryModal').style.display = 'flex';
+    document.getElementById('closeRecoveryModal').onclick = ()=> document.getElementById('recoveryModal').style.display = 'none';
     document.getElementById('sendEmailResetBtn').onclick = async () => {
-        let email = document.getElementById('recoveryEmail').value;
+        const email = document.getElementById('recoveryEmail').value;
         if (!email) return toast("Digite o e-mail");
-        await auth.sendPasswordResetEmail(email);
-        toast("Link enviado para " + email, "success");
+        await auth.sendPasswordResetEmail(email); toast("Link enviado para "+email, "success");
         document.getElementById('recoveryModal').style.display = 'none';
     };
 
     if ('serviceWorker' in navigator) {
         const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(clients.claim())); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(console.warn);
+        const blob = new Blob([swCode], { type:'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(console.warn);
     }
 </script>
-
-<!-- 
-    ⚡ COLE ESTAS REGRAS NO CONSOLE DO FIRESTORE (aba "Regras") e clique em "Publicar":
-    
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-        match /perfis/{userId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-        match /{document=**} {
-          allow read, write: if request.auth != null;
-        }
-      }
-    }
--->
 </body>
 </html>
